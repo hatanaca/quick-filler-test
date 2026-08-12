@@ -1,0 +1,18 @@
+# Code ownership
+* @hatanaca
+
+# Domain layer (pure business logic)
+/packages/domain/ @hatanaca
+
+# Application layer (use cases)
+/packages/application/ @hatanaca
+
+# Infrastructure (adapters, routes)
+/packages/infrastructure/ @hatanaca
+
+# Frontend
+/packages/frontend/ @hatanaca
+
+# Security-sensitive files
+/.github/SECURITY.md @hatanaca
+/.env.example @hatanaca

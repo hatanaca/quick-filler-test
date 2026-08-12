@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: .
+      target: backend
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      UPLOAD_MAX_SIZE_MB: 20
+      UPLOAD_MAX_CONCURRENT_PER_IP: 3
+      PROCESSING_TIMEOUT_MS: 60000
+      RETENTION_MINUTES: 60
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_WINDOW_MS: 60000
+      TESSERACT_LANG: por
+      OCR_WORKER_POOL_SIZE: 2
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3001/healthz']
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    ports:
+      - '5173:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  uploads:

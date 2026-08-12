@@ -1,0 +1,37 @@
+{
+  "name": "@quickfiller/infrastructure",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Infrastructure layer — Fastify server, OCR adapters, PDF parsing, exporters, DI container",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/bootstrap.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/bootstrap.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@fastify/compress": "^9.2.0",
+    "@fastify/cors": "^11.3.0",
+    "@fastify/helmet": "^13.1.0",
+    "@fastify/multipart": "^10.1.0",
+    "@fastify/rate-limit": "^11.2.0",
+    "@napi-rs/canvas": "^1.0.5",
+    "@quickfiller/application": "*",
+    "@quickfiller/domain": "*",
+    "csv-stringify": "^6.8.3",
+    "exceljs": "^4.4.0",
+    "fastify": "^5.11.3",
+    "nanoid": "^6.0.1",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^6.2.108",
+    "pino": "^9.5.0",
+    "tesseract.js": "^7.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

@@ -14,6 +14,7 @@ import type {
 import type { AppConfig } from './config.js'
 import { createLoggerOptions } from './middleware/logger.js'
 import { errorHandler } from './middleware/error-handler.js'
+import { ProcessingQueue } from './middleware/queue.js'
 import { registerHealthz } from './routes/healthz.route.js'
 import { registerTranscriptionRoutes } from './routes/transcricoes.route.js'
 
@@ -32,7 +33,10 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({
     logger: createLoggerOptions(deps.config.nodeEnv === 'development' ? 'debug' : 'info'),
     bodyLimit: deps.config.uploadMaxSizeBytes,
-    trustProxy: true,
+    // Confia em X-Forwarded-* apenas de proxies loopback (ex.: nginx no
+    // Docker). Com trustProxy:true qualquer cliente spoofaria o IP e
+    // contornaria o rate limit / limite por IP da fila de uploads.
+    trustProxy: 'loopback',
   } as Parameters<typeof Fastify>[0]) as unknown as FastifyInstance
 
   app.register(multipart, { limits: { fileSize: deps.config.uploadMaxSizeBytes } })
@@ -46,6 +50,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   app.setErrorHandler(errorHandler)
 
+  const uploadQueue = new ProcessingQueue(deps.config.uploadMaxConcurrentPerIp, app.log)
+
   registerHealthz(app)
   registerTranscriptionRoutes(app, {
     createTranscription: deps.createTranscription,
@@ -54,6 +60,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     processTranscription: deps.processTranscription,
     exportSpreadsheet: deps.exportSpreadsheet,
     uploadMaxSizeBytes: deps.config.uploadMaxSizeBytes,
+    uploadQueue,
   })
 
   return app

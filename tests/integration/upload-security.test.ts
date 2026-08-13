@@ -172,4 +172,15 @@ describe('Segurança de upload', () => {
       expect(key).toMatch(/^[0-9a-f-]{36}$/)
     }
   })
+
+  it('rejeita uploads simultâneos acima do limite por IP (429)', async () => {
+    const { payload, headers } = multipart(Buffer.from('%PDF-1.4 concorrencia'), 'b6')
+    const [a, b] = await Promise.all([
+      app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers }),
+      app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers }),
+    ])
+    const codes = [a.statusCode, b.statusCode].sort()
+    expect(codes[0]).toBe(202)
+    expect(codes[1]).toBe(429)
+  })
 })

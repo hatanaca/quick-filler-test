@@ -75,7 +75,7 @@ describe('ProcessTranscriptionUseCase', () => {
   it('processa cartão de ponto com texto embutido', async () => {
     const repo = new FakeRepository()
     const storage = new FakeStorage()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     await repo.save(t)
     await storage.save(id.value, Buffer.from('%PDF'))
@@ -93,7 +93,7 @@ describe('ProcessTranscriptionUseCase', () => {
   it('cai para OCR quando o texto embutido é vazio (PDF escaneado)', async () => {
     const repo = new FakeRepository()
     const storage = new FakeStorage()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     await repo.save(t)
     await storage.save(id.value, Buffer.from('%PDF'))
@@ -113,13 +113,16 @@ describe('ProcessTranscriptionUseCase', () => {
   it('marca como ERRO com mensagem legível quando extração falha', async () => {
     const repo = new FakeRepository()
     const storage = new FakeStorage()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     await repo.save(t)
     await storage.save(id.value, Buffer.from('%PDF'))
 
     // página escaneada (texto vazio) → tenta OCR → falha ao renderizar
-    const extractor = makeExtractor({ pagesText: [''], renderError: new Error('falha ao renderizar') })
+    const extractor = makeExtractor({
+      pagesText: [''],
+      renderError: new Error('falha ao renderizar'),
+    })
     const ocr = makeOcr()
     const useCase = new ProcessTranscriptionUseCase(repo, storage, extractor, ocr)
 
@@ -132,7 +135,7 @@ describe('ProcessTranscriptionUseCase', () => {
 
   it('marca como ERRO quando arquivo não existe no storage', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     await repo.save(Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO }))
 
     const useCase = new ProcessTranscriptionUseCase(
@@ -156,15 +159,15 @@ describe('ProcessTranscriptionUseCase', () => {
       makeOcr(),
     )
 
-    await expect(useCase.execute(TranscriptionId.from('nao-existe'))).rejects.toThrow(
-      /não encontrada/,
-    )
+    await expect(
+      useCase.execute(TranscriptionId.from('11111111-1111-4111-8111-111111111111')),
+    ).rejects.toThrow(/não encontrada/)
   })
 
   it('processa holerite com tipo HOLERITE', async () => {
     const repo = new FakeRepository()
     const storage = new FakeStorage()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.HOLERITE })
     await repo.save(t)
     await storage.save(id.value, Buffer.from('%PDF'))

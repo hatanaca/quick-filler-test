@@ -98,6 +98,6 @@ export class ExcelJsGeneratorAdapter implements SpreadsheetGeneratorPort {
       })
       return obj
     })
-    return Buffer.from(JSON.stringify(objects, null, 2), 'utf8')
+    return Buffer.from(JSON.stringify(objects), 'utf8')
   }
 }

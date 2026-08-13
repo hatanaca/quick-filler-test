@@ -7,10 +7,18 @@ const container = buildContainer(config)
 const app = buildApp({ config, ...container })
 
 const retentionMs = config.retentionMinutes * 60_000
-const cleanupTimer = setInterval(async () => {
-  const removed = await container.repository.deleteOlderThan(retentionMs)
-  if (removed > 0) app.log.info({ removed }, 'transcrições expiradas removidas pela retenção')
-}, Math.min(retentionMs, 60_000))
+const cleanupTimer = setInterval(
+  async () => {
+    try {
+      const removed = await container.repository.deleteOlderThan(retentionMs)
+      if (removed > 0) app.log.info({ removed }, 'transcrições expiradas removidas pela retenção')
+    } catch (error) {
+      // falha na retenção não deve derrubar o processo; tenta de novo no próximo ciclo
+      app.log.error(error, 'falha ao executar limpeza por retenção')
+    }
+  },
+  Math.min(retentionMs, 60_000),
+)
 
 async function shutdown(signal: string) {
   app.log.info({ signal }, 'encerrando aplicação')

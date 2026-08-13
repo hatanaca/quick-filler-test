@@ -11,7 +11,7 @@ export function useUpload() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  async function enviar(onSuccess: (id: string) => void) {
+  async function enviar(onSuccess: (id: string, arquivo: File) => void) {
     if (!arquivo) {
       setErro('selecione um arquivo PDF')
       return
@@ -27,7 +27,7 @@ export function useUpload() {
       if (!response.ok || !body.id) {
         throw new Error(body.erro ?? `erro ${response.status}`)
       }
-      onSuccess(body.id)
+      onSuccess(body.id, arquivo)
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'falha no envio')
     } finally {

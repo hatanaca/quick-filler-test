@@ -201,7 +201,10 @@ describe('API HTTP — contrato do desafio', () => {
   })
 
   it('GET /api/transcricoes/:id inexistente → 404', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/transcricoes/nao-existe' })
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/transcricoes/11111111-1111-4111-8111-111111111111',
+    })
     expect(res.statusCode).toBe(404)
   })
 
@@ -319,7 +322,7 @@ describe('API HTTP — contrato do desafio', () => {
   it('GET /planilha para transcrição inexistente → 404', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/api/transcricoes/nao-existe/planilha?formato=xlsx',
+      url: '/api/transcricoes/11111111-1111-4111-8111-111111111111/planilha?formato=xlsx',
     })
     expect(res.statusCode).toBe(404)
   })

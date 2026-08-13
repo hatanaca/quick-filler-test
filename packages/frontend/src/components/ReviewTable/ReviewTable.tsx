@@ -38,39 +38,68 @@ export function ReviewTable({ transcricao, onChange }: ReviewTableProps) {
   function editRow(rowIndex: number, colIndex: number, value: string) {
     const pages = transcricao.value?.pages ?? []
     if (transcricao.tipo === 'cartao-ponto') {
-      const cartaoPages = structuredClone(pages) as CartaoPontoPage[]
-      const flat = flattenCartao(cartaoPages)
-      const day = flat[rowIndex]?.day
-      if (!day) return
-      if (colIndex === 0) {
-        day.date_raw = value
-      } else {
-        const punchIndex = colIndex - 1
-        const punch = day.punches[punchIndex]
-        if (punch) {
-          punch.time_raw = value
-          punch.time_hhmm = value
+      const cartaoPages = pages as CartaoPontoPage[]
+      // localiza o dia correspondente à linha (rowIndex é o índice entre todos os dias)
+      let remaining = rowIndex
+      let pageIndex = -1
+      let dayIndex = -1
+      for (let i = 0; i < cartaoPages.length; i++) {
+        const days = cartaoPages[i]?.days ?? []
+        if (remaining < days.length) {
+          pageIndex = i
+          dayIndex = remaining
+          break
         }
+        remaining -= days.length
       }
-      onChange({ pages: cartaoPages })
+      if (pageIndex < 0 || dayIndex < 0) return
+      const day = cartaoPages[pageIndex]?.days[dayIndex]
+      if (!day) return
+
+      const nextPages = cartaoPages.map((page, i) => {
+        if (i !== pageIndex) return page
+        const nextDays = page.days.map((d, di) => {
+          if (di !== dayIndex) return d
+          if (colIndex === 0) return { ...d, date_raw: value }
+          const punchIndex = colIndex - 1
+          const punch = d.punches[punchIndex]
+          if (!punch) return d
+          return {
+            ...d,
+            punches: d.punches.map((p, pi) =>
+              pi === punchIndex ? { ...p, time_raw: value, time_hhmm: value } : p,
+            ),
+          }
+        })
+        return { ...page, days: nextDays }
+      })
+      onChange({ pages: nextPages })
       return
     }
 
-    const holeritePages = structuredClone(pages) as HoleritePage[]
-    const flat = flattenHolerite(holeritePages)
-    const row = flat[rowIndex]
-    if (!row) return
-    if (colIndex === 1) row.page.month = value
-    else if (colIndex === 2) row.page.year = value
-    else {
-      const label = headers[colIndex] ?? ''
-      const field = row.page.fields.find((f) => f.label === label)
-      if (field) field.value = value
-      else {
-        row.page.fields.push({ code: '', label, reference: '', value })
-      }
-    }
-    onChange({ pages: holeritePages })
+    const holeritePages = pages as HoleritePage[]
+    const page = holeritePages[rowIndex]
+    if (!page) return
+    const nextPage: HoleritePage =
+      colIndex === 1
+        ? { ...page, month: value }
+        : colIndex === 2
+          ? { ...page, year: value }
+          : (() => {
+              const label = headers[colIndex] ?? ''
+              const field = page.fields.find((f) => f.label === label)
+              return field
+                ? {
+                    ...page,
+                    fields: page.fields.map((f) => (f === field ? { ...f, value } : f)),
+                  }
+                : {
+                    ...page,
+                    fields: [...page.fields, { code: '', label, reference: '', value }],
+                  }
+            })()
+    const nextPages = holeritePages.map((p, i) => (i === rowIndex ? nextPage : p))
+    onChange({ pages: nextPages })
   }
 
   return (

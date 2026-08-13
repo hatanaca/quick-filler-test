@@ -48,7 +48,7 @@ class FakeGenerator implements SpreadsheetGeneratorPort {
 }
 
 function buildConcluded(tipo: DocumentType, repo: FakeRepository) {
-  const id = TranscriptionId.from('abc')
+  const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
   const t = Transcription.create({ id, tipo })
   if (tipo === DocumentType.CARTAO_PONTO) {
     t.complete({
@@ -70,7 +70,7 @@ function buildConcluded(tipo: DocumentType, repo: FakeRepository) {
   } else {
     t.complete({ pages: [] })
   }
-  repo.items.set('abc', t)
+  repo.items.set('00000000-0000-4000-8000-000000000001', t)
   return id
 }
 
@@ -119,18 +119,21 @@ describe('ExportSpreadsheetUseCase', () => {
   it('lança erro quando transcrição não existe', async () => {
     const useCase = new ExportSpreadsheetUseCase(new FakeRepository(), new FakeGenerator())
     await expect(
-      useCase.execute({ id: TranscriptionId.from('x'), formato: ExportFormat.XLSX }),
+      useCase.execute({
+        id: TranscriptionId.from('22222222-2222-4222-8222-222222222222'),
+        formato: ExportFormat.XLSX,
+      }),
     ).rejects.toThrow(/não encontrada/)
   })
 
   it('lança erro quando transcrição ainda não concluída', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     await repo.save(Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO }))
     const useCase = new ExportSpreadsheetUseCase(repo, new FakeGenerator())
 
-    await expect(
-      useCase.execute({ id, formato: ExportFormat.XLSX }),
-    ).rejects.toThrow(/concluída|processando/)
+    await expect(useCase.execute({ id, formato: ExportFormat.XLSX })).rejects.toThrow(
+      /concluída|processando/,
+    )
   })
 })

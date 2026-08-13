@@ -18,5 +18,17 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // separa vendor pesado (react, pdfjs) para cache e carga paralela
+          manualChunks: {
+            react: ['react', 'react-dom'],
+            pdf: ['react-pdf', 'pdfjs-dist'],
+            query: ['@tanstack/react-query'],
+          },
+        },
+      },
+    },
   }
 })

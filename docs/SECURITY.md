@@ -33,6 +33,11 @@ substituídos por `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 - CORS com origin whitelist (`CORS_ORIGIN`, suporta múltiplas separadas por vírgula)
 - Rate limit por IP (`RATE_LIMIT_MAX`, padrão 100/min)
 - Validação de entrada com Zod/VOs de domínio em todas as rotas
+- **IDs de transcrição validados como UUID** — impede path traversal via
+  `TranscriptionId` em caminhos de arquivo (`uploads/<id>.pdf`) e em headers
+  (`Content-Disposition`)
+- `trustProxy: 'loopback'` — `X-Forwarded-*` só é confiado a proxies locais
+  (ex.: nginx no Docker), impedindo spoofing de IP para contornar rate limit
 - Erros de domínio → 400 com mensagem; erros inesperados → 500 genérico
   (sem stack trace em produção)
 
@@ -82,6 +87,11 @@ replaced with `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 - CORS with origin whitelist (`CORS_ORIGIN`, comma-separated multiple origins)
 - Per-IP rate limit (`RATE_LIMIT_MAX`, default 100/min)
 - Input validation with Zod/domain VOs on all routes
+- **Transcription IDs validated as UUID** — prevents path traversal via
+  `TranscriptionId` in file paths (`uploads/<id>.pdf`) and in headers
+  (`Content-Disposition`)
+- `trustProxy: 'loopback'` — `X-Forwarded-*` is only trusted from local
+  proxies (e.g. nginx in Docker), preventing IP spoofing to bypass rate limits
 - Domain errors → 400 with message; unexpected errors → generic 500
   (no stack trace in production)
 

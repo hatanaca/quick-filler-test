@@ -1,30 +1,32 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { updateTranscription } from './api/client'
 import { Upload } from './components/Upload/Upload'
 import { ReviewTable } from './components/ReviewTable/ReviewTable'
 import { PdfViewer } from './components/PdfViewer/PdfViewer'
 import { DownloadButton } from './components/DownloadButton'
 import { useTranscricao } from './hooks/useTranscricao'
-import { useUpload } from './hooks/useUpload'
 
 export default function App() {
   const [id, setId] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const queryClient = useQueryClient()
   const { transcricao, erro: fetchErro } = useTranscricao(id)
   const [salvo, setSalvo] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { setArquivo } = useUpload()
-
-  const handleUploaded = useCallback(
-    (novoId: string) => {
-      setId(novoId)
-      const file = (document.querySelector('input[type="file"]') as HTMLInputElement)?.files?.[0]
-      setPdfFile(file ?? null)
-      if (file) setArquivo(file)
+  // limpa o debounce pendente no unmount para não disparar PUT em estado morto
+  useEffect(
+    () => () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current)
     },
-    [setArquivo],
+    [],
   )
+
+  const handleUploaded = useCallback((novoId: string, arquivo: File) => {
+    setId(novoId)
+    setPdfFile(arquivo)
+  }, [])
 
   const handleChange = useCallback(
     (value: unknown) => {
@@ -33,11 +35,15 @@ export default function App() {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(() => {
         updateTranscription(id, value)
-          .then(() => setSalvo(true))
+          .then(() => {
+            setSalvo(true)
+            // reflete as correções na tabela (o cache fica stale após o PUT)
+            void queryClient.invalidateQueries({ queryKey: ['transcricao', id] })
+          })
           .catch(() => setSalvo(false))
       }, 500)
     },
-    [id, transcricao],
+    [id, transcricao, queryClient],
   )
 
   return (

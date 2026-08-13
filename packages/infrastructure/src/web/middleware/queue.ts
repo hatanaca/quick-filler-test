@@ -30,12 +30,16 @@ export class ProcessingQueue {
     else this.perIp.set(ip, current - 1)
   }
 
-  async run(ip: string, task: () => Promise<void>): Promise<void> {
+  async run<T>(ip: string, task: () => Promise<T>): Promise<T> {
     if (!this.acquire(ip)) {
-      throw new Error('muitos uploads simultâneos para este IP')
+      const error = new Error('muitos uploads simultâneos para este IP') as Error & {
+        statusCode: number
+      }
+      error.statusCode = 429
+      throw error
     }
     try {
-      await task()
+      return await task()
     } finally {
       this.release(ip)
     }

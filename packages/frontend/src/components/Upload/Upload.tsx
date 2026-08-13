@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useUpload } from '../../hooks/useUpload'
 
 interface UploadProps {
-  onUploaded: (id: string) => void
+  onUploaded: (id: string, arquivo: File) => void
 }
 
 export function Upload({ onUploaded }: UploadProps) {

@@ -1,5 +1,9 @@
 import { DocumentType } from '../../transcription/value-objects/document-type.vo.js'
-import type { CartaoPontoResult, HoleriteResult, TranscriptionResult } from '../../transcription/value-objects/transcription-result.vo.js'
+import type {
+  CartaoPontoResult,
+  HoleriteResult,
+  TranscriptionResult,
+} from '../../transcription/value-objects/transcription-result.vo.js'
 import { WarningCalculator } from '../../transcription/services/warning-calculator.service.js'
 import { HighlightDetector } from './highlight-detector.service.js'
 import type { SpreadsheetRowData } from '../ports/spreadsheet-generator.port.js'
@@ -19,14 +23,13 @@ function buildCartaoPonto(result: CartaoPontoResult): BuiltSpreadsheet {
     headers.push(`Entrada ${pair}`, `Saída ${pair}`)
   }
 
-  const warnings = WarningCalculator.cartaoPonto(days)
+  const warningsByIndex = new Map(WarningCalculator.cartaoPonto(days).map((w) => [w.index, w]))
   const rows: SpreadsheetRowData[] = days.map((day, index) => {
     const cells: (string | null)[] = [day.date_raw, ...day.punches.map((p) => p.time_hhmm)]
     while (cells.length < headers.length) cells.push(null)
 
-    const isNonSequential = warnings
-      .find((w) => w.index === index)
-      ?.types.includes('non-sequential-date') ?? false
+    const isNonSequential =
+      warningsByIndex.get(index)?.types.includes('non-sequential-date') ?? false
 
     return { cells, highlight: HighlightDetector.cartaoPontoDay(day, isNonSequential) }
   })
@@ -37,26 +40,30 @@ function buildCartaoPonto(result: CartaoPontoResult): BuiltSpreadsheet {
 function buildHolerite(result: HoleriteResult): BuiltSpreadsheet {
   // União de todos os labels de fields, na ordem de primeira aparição no documento
   const labels: string[] = []
+  const seen = new Set<string>()
   for (const page of result.pages) {
     for (const field of page.fields) {
-      if (!labels.includes(field.label)) labels.push(field.label)
+      if (!seen.has(field.label)) {
+        seen.add(field.label)
+        labels.push(field.label)
+      }
     }
   }
 
   const headers = ['Pág.', 'Mês', 'Ano', ...labels]
 
-  const warnings = WarningCalculator.holerite(result.pages)
+  const warningsByPage = new Map(WarningCalculator.holerite(result.pages).map((w) => [w.page, w]))
   const rows: SpreadsheetRowData[] = result.pages.map((page) => {
+    const byLabel = new Map(page.fields.map((f) => [f.label, f.value]))
     const cells: (string | null)[] = [
       String(page.page),
       page.month,
       page.year,
-      ...labels.map((label) => page.fields.find((f) => f.label === label)?.value ?? null),
+      ...labels.map((label) => byLabel.get(label) ?? null),
     ]
 
-    const isNonSequential = warnings
-      .find((w) => w.page === page.page)
-      ?.types.includes('non-sequential-month') ?? false
+    const isNonSequential =
+      warningsByPage.get(page.page)?.types.includes('non-sequential-month') ?? false
 
     return { cells, highlight: HighlightDetector.holeritePage(page, isNonSequential) }
   })

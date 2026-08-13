@@ -19,12 +19,14 @@ export class PdfJsExtractorAdapter implements PdfExtractorPort {
     const task = getDocument({ data: new Uint8Array(buffer) })
     const doc = await task.promise
     try {
-      const texts: string[] = []
-      for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
-        const page = await doc.getPage(pageNumber)
-        const content = await page.getTextContent()
-        texts.push(this.groupByLine(content.items as unknown as TextItem[]))
-      }
+      const texts = await Promise.all(
+        Array.from({ length: doc.numPages }, (_, pageNumber) =>
+          doc
+            .getPage(pageNumber + 1)
+            .then((page) => page.getTextContent())
+            .then((content) => this.groupByLine(content.items as unknown as TextItem[])),
+        ),
+      )
       return texts
     } finally {
       await task.destroy()

@@ -28,7 +28,7 @@ class FakeRepository implements TranscriptionRepository {
 describe('UpdateTranscriptionUseCase', () => {
   it('atualiza value de transcrição concluída', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     t.complete({ pages: [PageCartaoPonto.from({ page: 1, days: [] })] })
     await repo.save(t)
@@ -51,31 +51,30 @@ describe('UpdateTranscriptionUseCase', () => {
   it('lança erro quando transcrição não existe', async () => {
     const useCase = new UpdateTranscriptionUseCase(new FakeRepository())
     await expect(
-      useCase.execute({ id: TranscriptionId.from('nao-existe'), value: { pages: [] } }),
+      useCase.execute({
+        id: TranscriptionId.from('11111111-1111-4111-8111-111111111111'),
+        value: { pages: [] },
+      }),
     ).rejects.toThrow(/não encontrada/)
   })
 
   it('lança erro quando transcrição está em ERRO', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     t.fail('timeout')
     await repo.save(t)
     const useCase = new UpdateTranscriptionUseCase(repo)
 
-    await expect(useCase.execute({ id, value: { pages: [] } })).rejects.toThrow(
-      /concluído|status/,
-    )
+    await expect(useCase.execute({ id, value: { pages: [] } })).rejects.toThrow(/concluído|status/)
   })
 
   it('lança erro quando transcrição ainda está processando', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     await repo.save(Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO }))
     const useCase = new UpdateTranscriptionUseCase(repo)
 
-    await expect(useCase.execute({ id, value: { pages: [] } })).rejects.toThrow(
-      /concluído|status/,
-    )
+    await expect(useCase.execute({ id, value: { pages: [] } })).rejects.toThrow(/concluído|status/)
   })
 })

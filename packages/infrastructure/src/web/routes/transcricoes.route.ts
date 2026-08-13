@@ -15,7 +15,7 @@ import {
   isExportFormat,
 } from '@quickfiller/domain'
 import { isPdfMagicBytes } from '../middleware/upload.js'
-import { isUploadTooLarge } from '../middleware/queue.js'
+import { isUploadTooLarge, type ProcessingQueue } from '../middleware/queue.js'
 
 export interface TranscriptionRoutesDeps {
   createTranscription: CreateTranscriptionUseCase
@@ -24,59 +24,69 @@ export interface TranscriptionRoutesDeps {
   processTranscription: ProcessTranscriptionUseCase
   exportSpreadsheet: ExportSpreadsheetUseCase
   uploadMaxSizeBytes: number
+  uploadQueue: ProcessingQueue
 }
 
-export function registerTranscriptionRoutes(app: FastifyInstance, deps: TranscriptionRoutesDeps): void {
+export function registerTranscriptionRoutes(
+  app: FastifyInstance,
+  deps: TranscriptionRoutesDeps,
+): void {
   const runInBackground = (id: { value: string }) => {
     setImmediate(() => {
-      deps.processTranscription
-        .execute(TranscriptionId.from(id.value))
-        .catch((error: unknown) => {
-          app.log.error(error, `falha ao processar transcrição ${id.value}`)
-        })
+      deps.processTranscription.execute(TranscriptionId.from(id.value)).catch((error: unknown) => {
+        app.log.error(error, `falha ao processar transcrição ${id.value}`)
+      })
     })
   }
 
   app.post('/api/transcricoes', async (request: FastifyRequest, reply) => {
-    const parts = request.parts()
-    let arquivo: Buffer | null = null
-    let tipo: string | null = null
+    return deps.uploadQueue.run(request.ip, async () => {
+      const parts = request.parts()
+      let arquivo: Buffer | null = null
+      let tipo: string | null = null
 
-    for await (const part of parts) {
-      if (part.type === 'file' && part.fieldname === 'arquivo') {
-        const chunks: Buffer[] = []
-        for await (const chunk of part.file) {
-          chunks.push(chunk as Buffer)
-          if (chunks.reduce((acc, c) => acc + c.length, 0) > deps.uploadMaxSizeBytes) {
-            throw new DomainError(
-              `arquivo excede o limite de ${Math.floor(deps.uploadMaxSizeBytes / 1024 / 1024)}MB`,
-            )
+      for await (const part of parts) {
+        if (part.type === 'file' && part.fieldname === 'arquivo') {
+          const chunks: Buffer[] = []
+          let total = 0
+          for await (const chunk of part.file) {
+            chunks.push(chunk as Buffer)
+            total += chunk.length
+            if (total > deps.uploadMaxSizeBytes) {
+              throw new DomainError(
+                `arquivo excede o limite de ${Math.floor(deps.uploadMaxSizeBytes / 1024 / 1024)}MB`,
+              )
+            }
           }
+          arquivo = Buffer.concat(chunks)
+        } else if (part.type === 'field' && part.fieldname === 'tipo') {
+          tipo = String(part.value)
         }
-        arquivo = Buffer.concat(chunks)
-      } else if (part.type === 'field' && part.fieldname === 'tipo') {
-        tipo = String(part.value)
       }
-    }
 
-    if (!arquivo || !tipo) {
-      throw new DomainError('campos obrigatórios: arquivo (PDF) e tipo (cartao-ponto | holerite)')
-    }
-    if (!isDocumentType(tipo)) {
-      throw new DomainError(`tipo inválido: "${tipo}" (esperado cartao-ponto ou holerite)`)
-    }
-    if (!isPdfMagicBytes(arquivo)) {
-      throw new DomainError('arquivo não é um PDF válido')
-    }
-    if (isUploadTooLarge(arquivo, deps.uploadMaxSizeBytes)) {
-      throw new DomainError('arquivo excede o limite de tamanho')
-    }
+      if (!arquivo || !tipo) {
+        throw new DomainError('campos obrigatórios: arquivo (PDF) e tipo (cartao-ponto | holerite)')
+      }
+      if (!isDocumentType(tipo)) {
+        throw new DomainError(`tipo inválido: "${tipo}" (esperado cartao-ponto ou holerite)`)
+      }
+      if (!isPdfMagicBytes(arquivo)) {
+        throw new DomainError('arquivo não é um PDF válido')
+      }
+      if (isUploadTooLarge(arquivo, deps.uploadMaxSizeBytes)) {
+        throw new DomainError('arquivo excede o limite de tamanho')
+      }
 
-    const id = await deps.createTranscription.execute({ tipo, arquivo, nomeArquivo: 'upload.pdf' })
-    runInBackground(id)
+      const id = await deps.createTranscription.execute({
+        tipo,
+        arquivo,
+        nomeArquivo: 'upload.pdf',
+      })
+      runInBackground(id)
 
-    reply.status(202)
-    return { id: id.value }
+      reply.status(202)
+      return { id: id.value }
+    })
   })
 
   app.get('/api/transcricoes/:id', async (request) => {

@@ -27,13 +27,13 @@ class FakeRepository implements TranscriptionRepository {
 describe('GetTranscriptionUseCase', () => {
   it('retorna transcrição existente com todos os campos', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc123')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     await repo.save(t)
     const useCase = new GetTranscriptionUseCase(repo)
 
     const result = await useCase.execute(id)
-    expect(result.id).toBe('abc123')
+    expect(result.id).toBe('00000000-0000-4000-8000-000000000001')
     expect(result.tipo).toBe(DocumentType.CARTAO_PONTO)
     expect(result.status).toBe(TranscriptionStatus.PROCESSANDO)
     expect(result.erro).toBeNull()
@@ -42,7 +42,7 @@ describe('GetTranscriptionUseCase', () => {
 
   it('status PROCESSANDO → value null', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     await repo.save(Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO }))
     const useCase = new GetTranscriptionUseCase(repo)
 
@@ -52,7 +52,7 @@ describe('GetTranscriptionUseCase', () => {
 
   it('status CONCLUIDO → value presente', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.HOLERITE })
     t.complete({ pages: [] })
     await repo.save(t)
@@ -64,7 +64,7 @@ describe('GetTranscriptionUseCase', () => {
 
   it('status ERRO → erro legível', async () => {
     const repo = new FakeRepository()
-    const id = TranscriptionId.from('abc')
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
     t.fail('PDF corrompido')
     await repo.save(t)
@@ -77,8 +77,8 @@ describe('GetTranscriptionUseCase', () => {
 
   it('lança erro quando transcrição não existe', async () => {
     const useCase = new GetTranscriptionUseCase(new FakeRepository())
-    await expect(useCase.execute(TranscriptionId.from('nao-existe'))).rejects.toThrow(
-      /não encontrada/,
-    )
+    await expect(
+      useCase.execute(TranscriptionId.from('11111111-1111-4111-8111-111111111111')),
+    ).rejects.toThrow(/não encontrada/)
   })
 })

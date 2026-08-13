@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { CellStyle, TranscriptionId, DocumentType, isDocumentType, TranscriptionStatus, isTranscriptionStatus } from '@quickfiller/domain'
+import {
+  CellStyle,
+  TranscriptionId,
+  DocumentType,
+  isDocumentType,
+  TranscriptionStatus,
+  isTranscriptionStatus,
+} from '@quickfiller/domain'
 
 describe('CellStyle', () => {
   it('header usa negrito branco sobre #173772', () => {
@@ -11,13 +18,17 @@ describe('CellStyle', () => {
 })
 
 describe('TranscriptionId', () => {
-  it('cria id a partir de string não vazia', () => {
-    const id = TranscriptionId.from('abc123')
-    expect(id.value).toBe('abc123')
+  it('cria id a partir de UUID válido', () => {
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
+    expect(id.value).toBe('00000000-0000-4000-8000-000000000001')
   })
 
   it('rejeita id vazia', () => {
     expect(() => TranscriptionId.from('')).toThrow(/id/)
+  })
+
+  it('rejeita id que não é UUID (path traversal)', () => {
+    expect(() => TranscriptionId.from('../../etc/passwd')).toThrow(/UUID/)
   })
 })
 

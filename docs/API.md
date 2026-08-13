@@ -16,7 +16,7 @@ HTTP/1.1 202 Accepted
 { "id": "abc123" }
 ```
 
-Erros / Errors: `400` (sem arquivo, tipo inválido, não-PDF), `413` (acima do limite).
+Erros / Errors: `400` (sem arquivo, tipo inválido, não-PDF, id malformado), `413` (acima do limite), `429` (uploads simultâneos acima de `UPLOAD_MAX_CONCURRENT_PER_IP` por IP).
 
 ## `GET /api/transcricoes/:id`
 
@@ -33,7 +33,7 @@ HTTP/1.1 200 OK
 
 `status` ∈ `processando` | `concluido` | `erro`. Enquanto `processando`,
 `value` é `null`. Em `erro`, `erro` traz mensagem legível.
-Not found → `404`.
+Not found → `404`; `:id` que não é UUID → `400`.
 
 ## `PUT /api/transcricoes/:id`
 

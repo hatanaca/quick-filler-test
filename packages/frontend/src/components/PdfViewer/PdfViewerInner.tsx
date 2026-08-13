@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
@@ -11,7 +11,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 export function PdfViewerInner({ file }: { file: File }) {
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
-  const url = useMemo(() => URL.createObjectURL(file), [file])
+  const [url, setUrl] = useState<string | null>(() => URL.createObjectURL(file))
+
+  useEffect(() => {
+    const next = URL.createObjectURL(file)
+    setUrl(next)
+    return () => URL.revokeObjectURL(next)
+  }, [file])
 
   return (
     <div className="flex h-full flex-col">
@@ -36,7 +42,7 @@ export function PdfViewerInner({ file }: { file: File }) {
       </div>
       <div className="flex-1 overflow-auto border border-gray-200 bg-gray-100 p-2">
         <Document
-          file={url}
+          file={url ?? undefined}
           onLoadSuccess={({ numPages: n }) => setNumPages(n)}
           className="mx-auto"
         >

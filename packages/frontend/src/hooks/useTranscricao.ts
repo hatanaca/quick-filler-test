@@ -1,36 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { getTranscription } from '../api/client'
-import type { Transcription } from '../types'
 
 const POLL_INTERVAL_MS = 2_000
 
 /**
- * Acompanha uma transcrição até concluir: polling a cada 2s enquanto
- * o status for "processando" — o processamento nunca bloqueia o request.
+ * Acompanha uma transcrição até concluir: o react-query faz polling a cada
+ * 2s enquanto o status for "processando" (refetchInterval é desligado
+ * automaticamente quando o status é terminal). O cache evita requisições
+ * duplicadas e o estado é limpo ao desmontar.
  */
 export function useTranscricao(id: string | null) {
-  const [transcricao, setTranscricao] = useState<Transcription | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
+  const query = useQuery({
+    queryKey: ['transcricao', id],
+    queryFn: () => getTranscription(id as string),
+    enabled: id !== null,
+    retry: false,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'processando' ? POLL_INTERVAL_MS : false,
+  })
 
-  const fetch = useCallback(async () => {
-    if (!id) return
-    try {
-      const data = await getTranscription(id)
-      setTranscricao(data)
-      setErro(null)
-    } catch (error) {
-      setErro(error instanceof Error ? error.message : 'falha ao buscar transcrição')
-    }
-  }, [id])
-
-  useEffect(() => {
-    if (!id) return
-    void fetch()
-    const timer = setInterval(() => {
-      void fetch()
-    }, POLL_INTERVAL_MS)
-    return () => clearInterval(timer)
-  }, [id, fetch])
-
-  return { transcricao, erro, refetch: fetch }
+  return {
+    transcricao: query.data ?? null,
+    erro: query.isError
+      ? query.error instanceof Error
+        ? query.error.message
+        : 'falha ao buscar transcrição'
+      : null,
+    refetch: query.refetch,
+  }
 }

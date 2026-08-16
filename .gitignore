@@ -11,8 +11,7 @@ coverage/
 
 # Environment
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
 # Uploads (PII — nunca commit)
@@ -33,9 +32,12 @@ Thumbs.db
 # IDE / Editors
 .vscode/
 .idea/
+.history/
 *.swp
 *.swo
 *~
+*.orig
+*.rej
 
 # MiMoCode agent data
 .mimocode/
@@ -47,3 +49,4 @@ tests/fixtures/uploads-tmp/
 # Misc
 .cache/
 .tmp/
+.npm/

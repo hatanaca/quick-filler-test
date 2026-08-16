@@ -26,7 +26,7 @@ const DAY_MARKER_RE = /^\s*(\d{1,2})\s*-\s*[A-Z]{2,3}\b/
 
 // Banco do Brasil: "DD WWW [ocorrência] [EntradaSaida HH:MM-HH:MM] [intervalos]..."
 const BB_MES_ANO_RE = /M[eê]s\/Ano\s*:\s*(\d{1,2})\/(\d{4})/
-const BB_DAY_RE = /^\s*(\d{1,2})\s*-?\s*([A-Z]{2,3})\b/
+const BB_DAY_RE = /^\s*(\d{1,2})[-\s]*([A-Z]{2,3})\b/
 const BB_RANGE_RE = /(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:?\d{2})/
 
 interface SiponDay {

@@ -60,7 +60,7 @@ export function parseFichaFinanceira(text: string, pageIndex: number): PageHoler
     if (!trimmed) continue
 
     // "Mês: abr-17" inicia uma nova competência.
-    const mesMatch = /^M[eê]s\s*:\s*(.+)$/.exec(trimmed)
+    const mesMatch = /^M[eê]s\s*:\s+(\S.*)$/.exec(trimmed)
     if (mesMatch) {
       flush()
       const my = parseMonthYearAbbr(mesMatch[1] ?? '')

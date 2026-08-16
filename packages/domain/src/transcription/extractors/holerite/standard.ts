@@ -3,8 +3,8 @@ import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
 import { SIGNED_MONEY_RE, lastMoney, moneyTokens, stripSign } from './money.js'
 
-const COMPETENCIA_RE = /(?:Compet[eê]ncia|referente a|compet[eê]ncia)\s*[:.]?\s*(\d{2})\/(\d{4})/i
-const FIELD_RE = /^(\d{4})\s+(.+)$/
+const COMPETENCIA_RE = /(?:Compet[eê]ncia|referente a)[:\s.]*(\d{2})\/(\d{4})/i
+const FIELD_RE = /^(\d{4})\s+(\S.*)$/
 const BASE_LABELS = [
   'Base INSS',
   'Base IR',

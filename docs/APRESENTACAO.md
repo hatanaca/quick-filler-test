@@ -167,7 +167,7 @@ Stack de plugins (ordem):
 1. `multipart` (upload com fileSize limit)
 2. `helmet` (security headers)
 3. `cors` (origin whitelist)
-4. `rate-limit` (100 req/60s por IP)
+4. `rate-limit` (300 req/60s por IP)
 5. `compress` (gzip/brotli)
 6. Error handler customizado
 7. Routes
@@ -207,7 +207,7 @@ Stack de plugins (ordem):
 | Upload size       | 3 camadas: Fastify bodyLimit, multipart fileSize, chunk counter |
 | Magic bytes       | Primeiros 5 bytes = `%PDF-`                                     |
 | UUID validation   | Regex canônico em TranscriptionId.from()                        |
-| Rate limit        | 100 req/60s por IP (configurável)                               |
+| Rate limit        | 300 req/60s por IP (configurável)                               |
 | Per-IP queue      | Max 3 uploads simultâneos por IP (429)                          |
 | trustProxy        | 'loopback' — só confia proxies locais                           |
 | PII redaction     | Logger scrub: CPF, matrícula, email, auth headers               |

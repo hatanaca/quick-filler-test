@@ -13,11 +13,7 @@ import {
 } from '@quickfiller/application'
 import { InMemoryTranscriptionRepository, DiskFileStorage } from '@quickfiller/infrastructure'
 import { PdfJsExtractorAdapter, ExcelJsGeneratorAdapter } from '@quickfiller/infrastructure'
-import type {
-  TranscriptionRepository,
-  FileStoragePort,
-  OcrEnginePort,
-} from '@quickfiller/domain'
+import type { TranscriptionRepository, FileStoragePort, OcrEnginePort } from '@quickfiller/domain'
 
 const FIXTURES = join(__dirname, '..', 'fixtures', 'pdfs')
 
@@ -40,6 +36,7 @@ const config = {
   rateLimitWindowMs: 60_000,
   tesseractLang: 'por',
   ocrWorkerPoolSize: 1,
+  trustProxy: ['loopback' as const],
 } as const
 
 function multipart(
@@ -119,7 +116,9 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
     expect(done.status).toBe('concluido')
     expect(done.value).not.toBeNull()
 
-    const value = done.value as { pages: { page: number; days: { date_raw: string; punches: { kind: string }[] }[] }[] }
+    const value = done.value as {
+      pages: { page: number; days: { date_raw: string; punches: { kind: string }[] }[] }[]
+    }
     expect(value.pages).toHaveLength(1)
     const days = value.pages[0]?.days ?? []
     expect(days.length).toBeGreaterThanOrEqual(5)
@@ -152,7 +151,12 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
     expect(done.status).toBe('concluido')
 
     const value = done.value as {
-      pages: { year: string; month: string; fields: { label: string; value: string }[]; bases: { label: string; value: string }[] }[]
+      pages: {
+        year: string
+        month: string
+        fields: { label: string; value: string }[]
+        bases: { label: string; value: string }[]
+      }[]
     }
     const page = value.pages[0]
     expect(page?.year).toBe('2019')

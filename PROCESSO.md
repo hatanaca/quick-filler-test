@@ -2,17 +2,17 @@
 
 ## Ferramentas usadas e para quê
 
-| Ferramenta | Uso |
-|------------|-----|
-| MiMoCode (agente CLI) | Desenvolvimento assistido em todas as etapas: scaffolding, TDD, infraestrutura, Docker, documentação |
-| Tesseract.js | OCR dos documentos escaneados |
-| pdfjs-dist | Extração de texto embutido e renderização de páginas |
-| ExcelJS | Geração de planilhas xlsx com estilos (cabeçalho `#173772`, destaques) |
-| Fastify + plugins | API HTTP, helmet, CORS, rate limit, multipart, compress |
-| Vitest | Testes unitários (TDD), de integração e E2E |
-| TypeScript strict | Tipagem em toda a base |
-| ESLint + Prettier | Padrão de código consistente |
-| Docker + docker-compose | Imagem multi-stage e orquestração |
+| Ferramenta              | Uso                                                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| MiMoCode (agente CLI)   | Desenvolvimento assistido em todas as etapas: scaffolding, TDD, infraestrutura, Docker, documentação |
+| Tesseract.js            | OCR dos documentos escaneados                                                                        |
+| pdfjs-dist              | Extração de texto embutido e renderização de páginas                                                 |
+| ExcelJS                 | Geração de planilhas xlsx com estilos (cabeçalho `#173772`, destaques)                               |
+| Fastify + plugins       | API HTTP, helmet, CORS, rate limit, multipart, compress                                              |
+| Vitest                  | Testes unitários (TDD), de integração e E2E                                                          |
+| TypeScript strict       | Tipagem em toda a base                                                                               |
+| ESLint + Prettier       | Padrão de código consistente                                                                         |
+| Docker + docker-compose | Imagem multi-stage e orquestração                                                                    |
 
 ## Pontos em que o agente errou ou pegou o caminho errado
 
@@ -85,10 +85,12 @@
 ### 2. O que na sua solução quebra primeiro em produção?
 
 O **pool do Tesseract**: em produção, o worker é criado sob demanda na
-primeira requisição (warm start ~2s) e não há limite de concorrência global —
-sob carga, vários workers simultâneos podem estourar memória do container
-(imagem Alpine, ~300MB). O `OCR_WORKER_POOL_SIZE` existe na config mas o
-pool real ainda não está implementado com fila.
+primeira requisição (warm start ~2s) e há um limite de concorrência apenas
+por documento (`OCR_WORKER_POOL_SIZE` como `concurrencyLimit` do
+`ProcessTranscriptionUseCase`) — não existe um teto global de workers entre
+transcrições simultâneas. Sob carga, vários workers simultâneos podem
+estourar memória do container (imagem Alpine, ~300MB); a fila per-IP limita
+o número de jobs por cliente, mas não o agregado.
 
 ### 3. Onde você não confia no que entregou?
 

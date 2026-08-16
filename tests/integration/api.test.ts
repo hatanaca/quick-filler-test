@@ -96,6 +96,7 @@ const config = {
   rateLimitWindowMs: 60_000,
   tesseractLang: 'por',
   ocrWorkerPoolSize: 1,
+  trustProxy: ['loopback' as const],
 } as const
 
 const PDF_BYTES = Buffer.from('%PDF-1.4 fake content')

@@ -41,6 +41,11 @@ export function registerTranscriptionRoutes(
 
       for await (const part of parts) {
         if (part.type === 'file') {
+          // Um segundo campo 'arquivo' concatenaria dois PDFs em um buffer
+          // corrompido — rejeita imediatamente em vez de falhar no OCR.
+          if (part.fieldname === 'arquivo' && arquivo !== null) {
+            throw new DomainError('apenas um arquivo é aceito por upload')
+          }
           const chunks: Buffer[] = []
           let total = 0
           // Drena o stream de TODAS as file parts — deixar uma parte sem

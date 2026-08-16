@@ -16,7 +16,7 @@ HTTP/1.1 202 Accepted
 { "id": "abc123" }
 ```
 
-Erros / Errors: `400` (sem arquivo, tipo inválido, não-PDF, id malformado), `413` (acima do limite), `429` (uploads simultâneos acima de `UPLOAD_MAX_CONCURRENT_PER_IP` por IP).
+Erros / Errors: `400` (sem arquivo, tipo inválido, não-PDF, id malformado, acima do limite — checado na rota), `413` (acima do limite — pode ocorrer antes, pelo plugin multipart/`bodyLimit`), `429` (uploads simultâneos acima de `UPLOAD_MAX_CONCURRENT_PER_IP` por IP).
 
 ## `GET /api/transcricoes/:id`
 
@@ -70,14 +70,14 @@ HTTP/1.1 200 OK
         {
           "date_raw": "21/05/2019",
           "punches": [
-            { "kind": "IN",  "time_raw": "08:25", "time_hhmm": "08:25" },
-            { "kind": "OUT", "time_raw": "18:25", "time_hhmm": "18:25" }
-          ]
+            { "kind": "IN", "time_raw": "08:25", "time_hhmm": "08:25" },
+            { "kind": "OUT", "time_raw": "18:25", "time_hhmm": "18:25" },
+          ],
         },
-        { "date_raw": "25/05/2019", "punches": [] }
-      ]
-    }
-  ]
+        { "date_raw": "25/05/2019", "punches": [] },
+      ],
+    },
+  ],
 }
 ```
 
@@ -91,14 +91,14 @@ HTTP/1.1 200 OK
       "year": "2020",
       "month": "01",
       "fields": [
-        { "code": "0010", "label": "Salário Base",     "reference": "220,00", "value": "2.389,77" }
+        { "code": "0010", "label": "Salário Base", "reference": "220,00", "value": "2.389,77" },
       ],
       "bases": [
-        { "label": "Base INSS",        "value": "2.545,68" },
-        { "label": "Valor Líquido",     "value": "2.282,81" }
-      ]
-    }
-  ]
+        { "label": "Base INSS", "value": "2.545,68" },
+        { "label": "Valor Líquido", "value": "2.282,81" },
+      ],
+    },
+  ],
 }
 ```
 

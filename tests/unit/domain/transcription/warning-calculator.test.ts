@@ -98,13 +98,13 @@ describe('WarningCalculator — holerite', () => {
   it('detecta página vazia', () => {
     const pages = [page(1, '01', '2020', false)]
     const warnings = WarningCalculator.holerite(pages)
-    expect(warnings.find((w) => w.page === 1)?.types).toContain('empty-page')
+    expect(warnings.find((w) => w.index === 0)?.types).toContain('empty-page')
   })
 
   it('detecta mês não sequencial', () => {
     const pages = [page(1, '01'), page(2, '03')]
     const warnings = WarningCalculator.holerite(pages)
-    expect(warnings.find((w) => w.page === 2)?.types).toContain('non-sequential-month')
+    expect(warnings.find((w) => w.index === 1)?.types).toContain('non-sequential-month')
   })
 
   it('não acusa sequência mensal válida', () => {
@@ -121,15 +121,15 @@ describe('WarningCalculator — holerite', () => {
     const pages = [page(1, '01'), page(2, '0?'), page(3, '03')]
     const warnings = WarningCalculator.holerite(pages)
     // a página com competência ilegível em si não é marcada
-    expect(warnings.find((w) => w.page === 2)).toBeUndefined()
+    expect(warnings.find((w) => w.index === 1)).toBeUndefined()
     // 03 compara com 01 (anterior legível) → não sequencial
-    expect(warnings.find((w) => w.page === 3)?.types).toContain('non-sequential-month')
+    expect(warnings.find((w) => w.index === 2)?.types).toContain('non-sequential-month')
   })
 
   it('página vazia com mês válido continua na cadeia de sequência', () => {
     const pages = [page(1, '01'), page(2, '02', '2020', false)]
     const warnings = WarningCalculator.holerite(pages)
-    const page2 = warnings.find((w) => w.page === 2)
+    const page2 = warnings.find((w) => w.index === 1)
     expect(page2?.types).toEqual(['empty-page'])
     expect(page2?.types).not.toContain('non-sequential-month')
   })
@@ -137,7 +137,23 @@ describe('WarningCalculator — holerite', () => {
   it('retorna todas as situações para página com múltiplos avisos', () => {
     const pages = [page(1, '01'), page(2, '04', '2020', false)]
     const warnings = WarningCalculator.holerite(pages)
-    expect(warnings.find((w) => w.page === 2)?.types).toEqual(
+    expect(warnings.find((w) => w.index === 1)?.types).toEqual(
+      expect.arrayContaining(['empty-page', 'non-sequential-month']),
+    )
+  })
+
+  it('page repetido (ficha financeira) não colide: avisos são por índice', () => {
+    const pages = [
+      page(1, '01', '2020', false),
+      page(1, '01', '2020', false), // mesmo page, competência igual (seções distintas)
+    ]
+    const warnings = WarningCalculator.holerite(pages)
+    expect(warnings).toHaveLength(2)
+    expect(warnings[0]?.index).toBe(0)
+    expect(warnings[1]?.index).toBe(1)
+    expect(warnings[0]?.types).toEqual(['empty-page'])
+    // mesma competência da anterior → não sequencial (além de vazia)
+    expect(warnings[1]?.types).toEqual(
       expect.arrayContaining(['empty-page', 'non-sequential-month']),
     )
   })

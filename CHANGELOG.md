@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-08-16
+
+### Fixed
+
+- **Domínio**: `HoleriteExtractor` — `MONEY_RE` agora aceita `?` de incerteza
+  (ex.: `2.38?,77` não corrompe mais label/value) e valores com 4+ dígitos
+  sem separador de milhar (`1234,56` era cortado para `234,56`)
+- **Domínio**: `WarningCalculator` — datas impossíveis (38/07, 31/02, 29/02
+  não-bissexto) não viram âncora da cadeia de sequência; `date-utils` valida
+  dias-por-mês com ano bissexto
+- **Domínio**: `Money` aceita valor totalmente incerto com separador (`??,??`)
+  e rejeita string sem dígitos nem `?` (`"..,,"`)
+- **Domínio**: erro com mensagem vazia não deixa transcrição presa em
+  `PROCESSANDO`; `PROCESSING_TIMEOUT_MS` agora é aplicado (timeout no
+  processamento libera o slot da fila)
+- **Domínio**: `EventBus` — um handler que lança não interrompe os demais;
+  mapper serializa pelo tipo real (cartão vazio não vira holerite)
+- **Infra**: retenção agora apaga os PDFs do disco (`deleteOlderThan` devolve
+  ids e o bootstrap chama `storage.delete`)
+- **Infra**: processamento roda dentro do slot per-IP da fila (antes o limite
+  era contornado por N uploads sequenciais → N jobs concorrentes, DoS)
+- **Infra**: `TesseractOcrAdapter.getWorker` memoiza a promise — sem race que
+  vazava workers; `pdf.js` chama `page.cleanup()` e `task.destroy()` em
+  `finally` (cobre PDF corrompido)
+- **Infra**: CSV neutraliza células iniciadas com `= + - @`/tab/CR (fórmula
+  injection no Excel); upload com dois campos `arquivo` rejeita com 400
+- **Infra**: `create` salva o arquivo antes do registro (rollback) — sem
+  registro órfão; multipart drena todas as parts; PII redigida também em
+  headers e url; `bodyLimit` com folga de 1MB para overhead do multipart
+- **Infra**: `loadConfig(env)` respeitava o parâmetro `env`? — não; agora lê
+  do objeto recebido; valores zerados/negativos (retenção, timeout, pool,
+  rate limit) caem no fallback — impossível `setInterval(0)`
+- **Infra**: `TRUST_PROXY` configurável (default `loopback`; em Docker atrás
+  do nginx, `loopback,172.16.0.0/12`) — rate limit/fila veem o IP real do
+  cliente; `RATE_LIMIT_MAX` padrão 300/min (o polling de 2s consumia ~90/min
+  com 3 transcrições simultâneas)
+- **Frontend**: `ReviewTable` mantém draft local — edições não são perdidas
+  entre PUTs (antes o payload era reconstruído do cache a cada keystroke);
+  erro de PUT 400 agora aparece na UI
+- **Frontend**: dia com batidas ímpares aceita adicionar a batida faltante;
+  horário `8:25` é normalizado para `08:25` antes do PUT
+- **Frontend**: PUTs serializados com `saveChain`; `setQueryData` em vez de
+  `invalidate`; `refetchOnWindowFocus` desligado; indicador "salvo" não vaza
+  entre documentos; polling com retry e cancelamento no status terminal
+- **Frontend**: upload usa `createTranscription` (respeita `VITE_API_URL`);
+  coluna "Pág." do holerite é read-only (não cria campo fantasma); blob URL
+  sem vazamento; data fora do formato não vira âncora de avisos
+- **Makefile**: alvos `test:unit:`/`test:integration:`/`format:check:` eram
+  parseados como static pattern rules e derrubavam o Makefile inteiro —
+  renomeados para `test-unit`/`test-integration`/`format-check`
+- **Deps**: removidas `zod` (application/infrastructure), `nanoid`,
+  `csv-stringify`, `pdf-parse`; `tsx` declarado na raiz
+
 ## [1.1.0] - 2026-08-12
 
 ### Fixed

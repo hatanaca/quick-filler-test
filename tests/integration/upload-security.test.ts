@@ -109,6 +109,7 @@ describe('Segurança de upload', () => {
     rateLimitWindowMs: 60_000,
     tesseractLang: 'por',
     ocrWorkerPoolSize: 1,
+    trustProxy: ['loopback' as const],
   } as const
 
   beforeAll(async () => {
@@ -182,5 +183,28 @@ describe('Segurança de upload', () => {
     const codes = [a.statusCode, b.statusCode].sort()
     expect(codes[0]).toBe(202)
     expect(codes[1]).toBe(429)
+  })
+
+  it('rejeita upload com dois campos "arquivo" (não concatena PDFs)', async () => {
+    const filePart = Buffer.from(
+      `--dup\r\nContent-Disposition: form-data; name="arquivo"; filename="a.pdf"\r\nContent-Type: application/pdf\r\n\r\n`,
+    )
+    const fileBody = Buffer.from('%PDF-1.4 primeiro')
+    const file2Part = Buffer.from(
+      `\r\n--dup\r\nContent-Disposition: form-data; name="arquivo"; filename="b.pdf"\r\nContent-Type: application/pdf\r\n\r\n`,
+    )
+    const file2Body = Buffer.from('%PDF-1.4 segundo')
+    const tipoPart = Buffer.from(
+      `\r\n--dup\r\nContent-Disposition: form-data; name="tipo"\r\n\r\ncartao-ponto\r\n`,
+    )
+    const footer = Buffer.from('--dup--\r\n')
+    const payload = Buffer.concat([filePart, fileBody, file2Part, file2Body, tipoPart, footer])
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transcricoes',
+      payload,
+      headers: { 'content-type': 'multipart/form-data; boundary=dup' },
+    })
+    expect(res.statusCode).toBe(400)
   })
 })

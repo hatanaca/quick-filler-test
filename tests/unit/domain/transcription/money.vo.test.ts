@@ -65,4 +65,9 @@ describe('Money', () => {
     const money = Money.from('?.???')
     expect(money.hasUncertainty()).toBe(true)
   })
+
+  it('rejeita string sem dígitos e sem "?" (ex.: "..,,")', () => {
+    expect(() => Money.from('..,,')).toThrow(/formato/)
+    expect(() => Money.from('.,')).toThrow(/formato/)
+  })
 })

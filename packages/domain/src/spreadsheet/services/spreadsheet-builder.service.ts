@@ -52,8 +52,8 @@ function buildHolerite(result: HoleriteResult): BuiltSpreadsheet {
 
   const headers = ['Pág.', 'Mês', 'Ano', ...labels]
 
-  const warningsByPage = new Map(WarningCalculator.holerite(result.pages).map((w) => [w.page, w]))
-  const rows: SpreadsheetRowData[] = result.pages.map((page) => {
+  const warningsByIndex = new Map(WarningCalculator.holerite(result.pages).map((w) => [w.index, w]))
+  const rows: SpreadsheetRowData[] = result.pages.map((page, index) => {
     const byLabel = new Map(page.fields.map((f) => [f.label, f.value]))
     const cells: (string | null)[] = [
       String(page.page),
@@ -63,7 +63,7 @@ function buildHolerite(result: HoleriteResult): BuiltSpreadsheet {
     ]
 
     const isNonSequential =
-      warningsByPage.get(page.page)?.types.includes('non-sequential-month') ?? false
+      warningsByIndex.get(index)?.types.includes('non-sequential-month') ?? false
 
     return { cells, highlight: HighlightDetector.holeritePage(page, isNonSequential) }
   })

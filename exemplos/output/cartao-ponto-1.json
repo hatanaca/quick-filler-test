@@ -27,11 +27,5 @@
     "Entrada 2": "13:00",
     "Saída 2": "18:15"
   },
-  {
-    "Data": "25/05/2019",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null
-  }
+  { "Data": "25/05/2019", "Entrada 1": null, "Saída 1": null, "Entrada 2": null, "Saída 2": null }
 ]

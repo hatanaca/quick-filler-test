@@ -1,4 +1,4 @@
-.PHONY: setup install dev build test lint typecheck format docker-up docker-down clean
+.PHONY: setup install dev build test test-unit test-integration lint typecheck format format-check docker-up docker-down clean
 
 # Setup inicial
 setup:
@@ -17,10 +17,12 @@ build:
 test:
 	npm test
 
-test:unit:
+# Alvos com hífen: "test:unit:" como nome de alvo era parseado como static
+# pattern rule e derrubava o Makefile inteiro (nenhum alvo funcionava).
+test-unit:
 	npm run test:unit
 
-test:integration:
+test-integration:
 	npm run test:integration
 
 lint:
@@ -32,7 +34,7 @@ typecheck:
 format:
 	npm run format
 
-format:check:
+format-check:
 	npm run format:check
 
 docker-up:

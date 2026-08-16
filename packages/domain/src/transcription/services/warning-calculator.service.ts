@@ -23,7 +23,7 @@ export interface DayWarning {
 }
 
 export interface PageWarning {
-  page: number
+  index: number
   types: HoleriteWarningType[]
 }
 
@@ -63,7 +63,9 @@ export const WarningCalculator = {
     const warnings: PageWarning[] = []
     let lastReadable: { year: number; month: number } | null = null
 
-    for (const page of pages) {
+    for (let index = 0; index < pages.length; index++) {
+      const page = pages[index]
+      if (!page) continue
       const types: HoleriteWarningType[] = []
       if (page.isEmpty()) types.push(HoleriteWarningType.EMPTY_PAGE)
 
@@ -80,7 +82,7 @@ export const WarningCalculator = {
         lastReadable = { year, month }
       }
 
-      if (types.length > 0) warnings.push({ page: page.page, types })
+      if (types.length > 0) warnings.push({ index, types })
     }
 
     return warnings

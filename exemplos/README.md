@@ -1,37 +1,37 @@
 # Documentos de exemplo
 
-Os PDFs oficiais do desafio (`cartao-ponto-1.pdf`, `cartao-ponto-2.pdf`,
-`holerite-1.pdf`, `holerite-2.pdf`) **não estão disponíveis no repositório
-público** — a pasta `exemplos/` do repositório do desafio contém apenas o
-README.
+## PDFs presentes
 
-## Como obter
+| Arquivo              | Tipo         | Layout                             | Camada de texto |
+| -------------------- | ------------ | ---------------------------------- | --------------- |
+| `cartao-ponto-1.pdf` | cartao-ponto | padrão (sintético)                 | sim             |
+| `time-card-01.pdf`   | cartao-ponto | FOLHA DE FREQUÊNCIA (SIPON)        | sim             |
+| `time-card-02.pdf`   | cartao-ponto | Banco do Brasil — Ponto Eletrônico | não (OCR)       |
+| `time-card-03.pdf`   | cartao-ponto | Cartão de Ponto (datas + colunas)  | não (OCR)       |
+| `time-card-04.pdf`   | cartao-ponto | ilegível na digitalização          | não (OCR)       |
+| `holerite-1.pdf`     | holerite     | padrão (sintético)                 | sim             |
+| `payroll-01.pdf`     | holerite     | FICHA FINANCEIRA (multi-mês)       | sim             |
+| `payroll-02.pdf`     | holerite     | Declaração Remuneração             | sim             |
+| `payroll-03.pdf`     | holerite     | Demonstrativo de Pagamento         | sim             |
+| `payroll-04.pdf`     | holerite     | Recibo de Pagamento                | não (OCR)       |
 
-Os PDFs são enviados pelo recrutador no início do processo. Coloque-os aqui:
+Os extratores detectam o layout por documento e despacham para o parser
+específico (`packages/domain/src/transcription/extractors/`).
 
-```
-exemplos/
-├── cartao-ponto-1.pdf
-├── cartao-ponto-2.pdf
-├── holerite-1.pdf
-└── holerite-2.pdf
-```
+## Documentos escaneados (OCR)
 
-## PDFs de teste sintéticos
-
-Para desenvolvimento e CI sem depender dos PDFs oficiais, geramos PDFs
-sintéticos com os mesmos layouts (cartão de ponto com batidas em pares,
-holerite com tabela de verbas + seção de bases separada):
-
-```bash
-npm run test-pdfs   # gera tests/fixtures/pdfs/
-```
+`payroll-04`, `time-card-02/03/04` não têm camada de texto — o pipeline renderiza
+cada página e roda Tesseract (`por`). A extração desses documentos é **melhor
+esforço**: o OCR de tabelas é lossy, e a digitalização do `time-card-04` é
+ilegível (a saída fica honestamente vazia em vez de inventar valores). O
+`Recibo de Pagamento` (payroll-04) e o `Banco do Brasil` (time-card-02) têm
+parsers dedicados que funcionam em digitalizações legíveis.
 
 ## Planilhas de entrega
 
-Com os PDFs oficiais em `exemplos/`, gere as planilhas (entregável do
-desafio — xlsx, csv e json de cada documento) com:
-
 ```bash
-npm run samples     # gera exemplos/output/
+npm run samples     # gera exemplos/output/ (xlsx, csv e json por documento)
 ```
+
+Gera uma planilha por PDF em `exemplos/output/`:
+`cartao-ponto-1`, `time-card-01..04`, `holerite-1`, `payroll-01..04`.

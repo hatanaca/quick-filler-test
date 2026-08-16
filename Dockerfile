@@ -1,7 +1,7 @@
 # ============================================
 # Stage 1: build
 # ============================================
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN npm run build
 # ============================================
 # Stage 2: produção (backend)
 # ============================================
-FROM node:22-alpine AS backend
+FROM node:26-alpine AS backend
 
 WORKDIR /app
 ENV NODE_ENV=production

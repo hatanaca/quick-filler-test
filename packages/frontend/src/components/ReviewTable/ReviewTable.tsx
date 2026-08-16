@@ -80,6 +80,9 @@ export function ReviewTable({ transcricao, onChange }: ReviewTableProps) {
     const holeritePages = pages as HoleritePage[]
     const page = holeritePages[rowIndex]
     if (!page) return
+    // coluna 0 = número da página: não é editável e, se fosse, criaria um
+    // field fantasma com label "Pág." persistido via PUT
+    if (colIndex === 0) return
     const nextPage: HoleritePage =
       colIndex === 1
         ? { ...page, month: value }
@@ -123,6 +126,8 @@ export function ReviewTable({ transcricao, onChange }: ReviewTableProps) {
                   <input
                     className="w-full bg-transparent outline-none"
                     value={cell ?? ''}
+                    // holerite: coluna 0 (número da página) é read-only
+                    readOnly={transcricao.tipo === 'holerite' && colIndex === 0}
                     onChange={(e) => editRow(rowIndex, colIndex, e.target.value)}
                   />
                 </td>

@@ -49,7 +49,10 @@ export class ProcessTranscriptionUseCase {
       const result = extractorFor(transcription.tipo).extract(completeTexts)
       transcription.complete(result)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'erro desconhecido'
+      // Mensagem vazia derrubaria `fail` (que rejeita string vazia) dentro do
+      // próprio catch, deixando a transcrição presa em PROCESSANDO para sempre.
+      const message =
+        error instanceof Error && error.message.trim() ? error.message : 'erro desconhecido'
       transcription.fail(message)
     }
 

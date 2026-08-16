@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { CartaoPontoExtractor, HoleriteExtractor, type TranscriptionResult } from '@quickfiller/domain'
+import {
+  CartaoPontoExtractor,
+  HoleriteExtractor,
+  type TranscriptionResult,
+} from '@quickfiller/domain'
 
 interface CartaoPunch {
   kind: string
@@ -95,7 +99,10 @@ describe('CartaoPontoExtractor', () => {
   })
 
   it('gera uma página por texto de página', () => {
-    const result = CartaoPontoExtractor.extract(['21/05/2019 08:00 18:00', '22/05/2019 08:00 18:00'])
+    const result = CartaoPontoExtractor.extract([
+      '21/05/2019 08:00 18:00',
+      '22/05/2019 08:00 18:00',
+    ])
     expect(result.pages).toHaveLength(2)
     expect(result.pages[1]?.page).toBe(2)
   })
@@ -160,5 +167,21 @@ describe('HoleriteExtractor', () => {
   it('competência com "?" de incerteza é preservada', () => {
     const page = holeritePage(HoleriteExtractor.extract(['Competência: 0?/2019']))
     expect(page.month).toBe('0?')
+  })
+
+  it('valor com "?" de incerteza é capturado (não corrompe label nem reference)', () => {
+    const page = holeritePage(HoleriteExtractor.extract(['0010 Salário Base 220,00 2.38?,77']))
+    const field = page.fields[0]
+    expect(field?.label).toBe('Salário Base')
+    expect(field?.reference).toBe('220,00')
+    expect(field?.value).toBe('2.38?,77')
+  })
+
+  it('reference com uma casa decimal é capturada (não vaza para o label)', () => {
+    const page = holeritePage(HoleriteExtractor.extract(['5560 Hora Extra 100% 2,0 155,91']))
+    const field = page.fields[0]
+    expect(field?.label).toBe('Hora Extra 100%')
+    expect(field?.reference).toBe('2,0')
+    expect(field?.value).toBe('155,91')
   })
 })

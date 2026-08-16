@@ -24,15 +24,15 @@ export class InMemoryTranscriptionRepository implements TranscriptionRepository 
     this.createdAt.delete(id.value)
   }
 
-  /** Remove transcrições mais velhas que o período de retenção. */
-  async deleteOlderThan(ageMs: number): Promise<number> {
+  /** Remove transcrições mais velhas que o período de retenção e devolve os ids removidos. */
+  async deleteOlderThan(ageMs: number): Promise<string[]> {
     const cutoff = Date.now() - ageMs
-    let removed = 0
+    const removed: string[] = []
     for (const [id, createdAt] of this.createdAt) {
       if (createdAt.getTime() < cutoff) {
         this.items.delete(id)
         this.createdAt.delete(id)
-        removed++
+        removed.push(id)
       }
     }
     return removed

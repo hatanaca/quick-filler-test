@@ -151,6 +151,27 @@ describe('ProcessTranscriptionUseCase', () => {
     expect(updated?.status).toBe(TranscriptionStatus.ERRO)
   })
 
+  it('erro com mensagem vazia não deixa a transcrição presa em PROCESSANDO', async () => {
+    const repo = new FakeRepository()
+    const storage = new FakeStorage()
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
+    const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
+    await repo.save(t)
+    await storage.save(id.value, Buffer.from('%PDF'))
+
+    const extractor = makeExtractor({
+      pagesText: [''],
+      renderError: new Error(''),
+    })
+    const useCase = new ProcessTranscriptionUseCase(repo, storage, extractor, makeOcr())
+
+    await useCase.execute(id)
+
+    const updated = await repo.findById(id)
+    expect(updated?.status).toBe(TranscriptionStatus.ERRO)
+    expect(updated?.erro).toBe('erro desconhecido')
+  })
+
   it('lança erro quando transcrição não existe', async () => {
     const useCase = new ProcessTranscriptionUseCase(
       new FakeRepository(),

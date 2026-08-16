@@ -6,6 +6,7 @@ import {
   isDocumentType,
   TranscriptionStatus,
   isTranscriptionStatus,
+  parseDateRaw,
 } from '@quickfiller/domain'
 
 describe('CellStyle', () => {
@@ -43,6 +44,33 @@ describe('DocumentType', () => {
     expect(isDocumentType('holerite')).toBe(true)
     expect(isDocumentType('invalido')).toBe(false)
     expect(isDocumentType('')).toBe(false)
+  })
+})
+
+describe('parseDateRaw', () => {
+  it('aceita data válida', () => {
+    const result = parseDateRaw('15/03/2023')
+    expect(result.status).toBe('readable')
+  })
+
+  it('marca ilegível quando contém "?"', () => {
+    expect(parseDateRaw('1?/03/2023').status).toBe('unreadable')
+  })
+
+  it('marca impossível dia fora do mês (31/02)', () => {
+    expect(parseDateRaw('31/02/2023').status).toBe('impossible')
+  })
+
+  it('marca impossível 29/02 em ano não bissexto', () => {
+    expect(parseDateRaw('29/02/2023').status).toBe('impossible')
+  })
+
+  it('aceita 29/02 em ano bissexto', () => {
+    expect(parseDateRaw('29/02/2024').status).toBe('readable')
+  })
+
+  it('marca impossível mês fora do range', () => {
+    expect(parseDateRaw('01/13/2023').status).toBe('impossible')
   })
 })
 

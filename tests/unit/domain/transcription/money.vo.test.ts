@@ -55,4 +55,14 @@ describe('Money', () => {
     const money = Money.from('?39,77')
     expect(money.hasUncertainty()).toBe(true)
   })
+
+  it('aceita valor totalmente incerto com separador decimal ("??,??")', () => {
+    const money = Money.from('??,??')
+    expect(money.hasUncertainty()).toBe(true)
+  })
+
+  it('aceita valor totalmente incerto com separador de milhar ("?.???")', () => {
+    const money = Money.from('?.???')
+    expect(money.hasUncertainty()).toBe(true)
+  })
 })

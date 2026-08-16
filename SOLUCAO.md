@@ -91,18 +91,34 @@ descobre a conclusão por polling em `GET /api/transcricoes/:id`.
 - Detecção: `extractPages` devolve o texto por página; páginas sem texto são
   renderizadas como imagem e enviadas ao OCR.
 - Limitação conhecida: Tesseract é bom, mas não é um serviço de nuvem —
-  a calibração dos `?` depende da qualidade da digitalização. O `SOLUCAO.md`
-  reconhece: textos digitalizados com contraste ruim tendem a mais `?`,
-  o que é honesto por construção.
+  a calibração dos `?` depende da qualidade da digitalização. Documentos
+  escaneados com contraste ruim (ex.: `time-card-04.pdf`) podem sair
+  honestamente vazios em vez de inventar valores.
+
+## Layouts suportados
+
+Os extratores detectam o layout por documento (extração de texto com colunas
+preservadas via `\t`) e despacham para o parser específico:
+
+| Tipo         | Layout                                   | Documento            |
+| ------------ | ---------------------------------------- | -------------------- |
+| cartao-ponto | padrão (`dd/mm/yyyy` + batidas na linha) | `cartao-ponto-1.pdf` |
+| cartao-ponto | FOLHA DE FREQUÊNCIA (SIPON)              | `time-card-01.pdf`   |
+| cartao-ponto | Banco do Brasil — Ponto Eletrônico (OCR) | `time-card-02.pdf`   |
+| cartao-ponto | Cartão de Ponto com datas (OCR)          | `time-card-03.pdf`   |
+| holerite     | padrão (código 4 dígitos)                | `holerite-1.pdf`     |
+| holerite     | FICHA FINANCEIRA (multi-mês; bônus)      | `payroll-01.pdf`     |
+| holerite     | Declaração Remuneração (MÊS/ACERTO)      | `payroll-02.pdf`     |
+| holerite     | Demonstrativo de Pagamento               | `payroll-03.pdf`     |
+| holerite     | Recibo de Pagamento (OCR)                | `payroll-04.pdf`     |
 
 ## O que ficou de fora (escopo cortado)
 
-- **Planilhas dos PDFs oficiais**: os arquivos `exemplos/*.pdf` não estão no
-  repositório público do desafio (apenas README); a pasta contém PDFs
-  sintéticos equivalentes e o script `npm run samples` gera as planilhas
-  assim que os oficiais forem fornecidos.
+- **OCR de documentos ilegíveis**: `time-card-04.pdf` tem digitalização
+  ilegível — a saída fica honestamente vazia. Os layouts escaneados
+  (`time-card-02/03`, `payroll-04`) são extraídos por melhor esforço.
 - **Bônus** (não implementados): rastreabilidade visual (coordenadas),
-  detecção automática de tipo, ficha financeira anual.
+  detecção automática de tipo.
 - **Banco de dados**: repositório em memória é suficiente para o fluxo e a
   retenção curta; a interface `TranscriptionRepository` permite trocar por
   SQLite/Postgres sem tocar em domain/application.
@@ -116,11 +132,11 @@ revisão.
 
 ## Como avalio minha entrega
 
-| Critério | Autoavaliação |
-|----------|--------------|
-| Precisão da extração | Forte nos PDFs com texto; OCR funciona mas depende da digitalização |
-| Honestidade dos dados | `?` por caractere, datas impossíveis nunca produzidas |
-| Ciclo completo | Validado E2E em teste e via Docker |
-| Arquitetura | DDD hexagonal, pipeline único, processamento assíncrono |
-| Segurança | Magic bytes, limite, retenção, PII redigida |
-| Código/decisões | 177 testes, lint + typecheck limpos, docs bilingues |
+| Critério              | Autoavaliação                                                       |
+| --------------------- | ------------------------------------------------------------------- |
+| Precisão da extração  | Forte nos PDFs com texto; OCR funciona mas depende da digitalização |
+| Honestidade dos dados | `?` por caractere, datas impossíveis nunca produzidas               |
+| Ciclo completo        | Validado E2E em teste e via Docker                                  |
+| Arquitetura           | DDD hexagonal, pipeline único, processamento assíncrono             |
+| Segurança             | Magic bytes, limite, retenção, PII redigida                         |
+| Código/decisões       | 211 testes, lint + typecheck limpos, docs bilingues                 |

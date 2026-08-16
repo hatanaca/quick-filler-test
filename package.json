@@ -1,6 +1,6 @@
 {
   "name": "quick-filler-test",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "Quick Filler challenge: transcribe labor documents (time cards and pay stubs) from PDF to structured spreadsheets",
@@ -43,6 +43,7 @@
     "lint-staged": "^15.3.0",
     "pdfkit": "^0.19.1",
     "prettier": "^3.4.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.18.0",
     "vitest": "^3.0.0"

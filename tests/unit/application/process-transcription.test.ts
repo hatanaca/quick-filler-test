@@ -87,7 +87,12 @@ describe('ProcessTranscriptionUseCase', () => {
 
     const updated = await repo.findById(id)
     expect(updated?.status).toBe(TranscriptionStatus.CONCLUIDO)
-    expect(updated?.value).not.toBeNull()
+    // valida o conteúdo extraído (não só o status)
+    const value = updated?.value as unknown as {
+      pages: { days: { date_raw: string; punches: unknown[] }[] }[]
+    }
+    expect(value?.pages[0]?.days[0]?.date_raw).toBe('21/05/2019')
+    expect(value?.pages[0]?.days[0]?.punches).toHaveLength(2)
   })
 
   it('cai para OCR quando o texto embutido é vazio (PDF escaneado)', async () => {
@@ -108,6 +113,9 @@ describe('ProcessTranscriptionUseCase', () => {
     expect(ocr.recognize).toHaveBeenCalled()
     const updated = await repo.findById(id)
     expect(updated?.status).toBe(TranscriptionStatus.CONCLUIDO)
+    // o texto reconhecido pelo OCR deve ter sido extraído de verdade
+    const value = updated?.value as unknown as { pages: { days: { date_raw: string }[] }[] }
+    expect(value?.pages[0]?.days[0]?.date_raw).toBe('21/05/2019')
   })
 
   it('marca como ERRO com mensagem legível quando extração falha', async () => {
@@ -172,6 +180,28 @@ describe('ProcessTranscriptionUseCase', () => {
     expect(updated?.erro).toBe('erro desconhecido')
   })
 
+  it('timeout de processamento marca ERRO (não deixa o slot preso)', async () => {
+    const repo = new FakeRepository()
+    const storage = new FakeStorage()
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
+    const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
+    await repo.save(t)
+    await storage.save(id.value, Buffer.from('%PDF'))
+
+    // extrator que nunca resolve — o race do timeout decide
+    const hanging: PdfExtractorPort = {
+      extractPages: () => new Promise(() => {}),
+      renderPage: () => new Promise(() => {}),
+    }
+    const useCase = new ProcessTranscriptionUseCase(repo, storage, hanging, makeOcr(), 1, 50)
+
+    await useCase.execute(id)
+
+    const updated = await repo.findById(id)
+    expect(updated?.status).toBe(TranscriptionStatus.ERRO)
+    expect(updated?.erro).toContain('processamento excedeu')
+  })
+
   it('lança erro quando transcrição não existe', async () => {
     const useCase = new ProcessTranscriptionUseCase(
       new FakeRepository(),
@@ -203,5 +233,19 @@ Base INSS 2.545,68`
 
     const updated = await repo.findById(id)
     expect(updated?.status).toBe(TranscriptionStatus.CONCLUIDO)
+    // valida a separação fields/bases extraída (não só o status)
+    const value = updated?.value as unknown as {
+      pages: {
+        month: string
+        fields: { label: string; value: string }[]
+        bases: { label: string; value: string }[]
+      }[]
+    }
+    const page = value?.pages[0]
+    expect(page?.month).toBe('01')
+    expect(page?.fields.some((f) => f.label === 'Salário Base' && f.value === '2.389,77')).toBe(
+      true,
+    )
+    expect(page?.bases.some((b) => b.label === 'Base INSS' && b.value === '2.545,68')).toBe(true)
   })
 })

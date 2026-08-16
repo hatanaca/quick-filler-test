@@ -14,10 +14,14 @@ services:
       PROCESSING_TIMEOUT_MS: 60000
       RETENTION_MINUTES: 60
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_MAX: 300
       RATE_LIMIT_WINDOW_MS: 60000
       TESSERACT_LANG: por
       OCR_WORKER_POOL_SIZE: 2
+      # nginx conecta ao backend pela rede Docker (não-loopback); confiar na
+      # sub-rede do proxy é necessário para rate limit/fila verem o IP real.
+      # 172.16.0.0/12 cobre as redes bridge padrão do Docker.
+      TRUST_PROXY: loopback,172.16.0.0/12
     volumes:
       - uploads:/app/uploads
     healthcheck:

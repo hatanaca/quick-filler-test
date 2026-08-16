@@ -45,6 +45,7 @@ export function buildContainer(config: AppConfig): Container {
     pdfExtractor,
     ocr,
     config.ocrWorkerPoolSize,
+    config.processingTimeoutMs,
   )
   const exportSpreadsheet = new ExportSpreadsheetUseCase(repository, generator)
 

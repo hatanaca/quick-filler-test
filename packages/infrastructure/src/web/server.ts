@@ -32,11 +32,15 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   // o cast mantém o generic padrão (RawServerDefault) nos handlers.
   const app = Fastify({
     logger: createLoggerOptions(deps.config.nodeEnv === 'development' ? 'debug' : 'info'),
-    bodyLimit: deps.config.uploadMaxSizeBytes,
-    // Confia em X-Forwarded-* apenas de proxies loopback (ex.: nginx no
-    // Docker). Com trustProxy:true qualquer cliente spoofaria o IP e
-    // contornaria o rate limit / limite por IP da fila de uploads.
-    trustProxy: 'loopback',
+    // Folga de 1MB além do limite do arquivo para o overhead do multipart:
+    // bodyLimit == limite do arquivo fazia uploads no teto falharem com 413.
+    bodyLimit: deps.config.uploadMaxSizeBytes + 1024 * 1024,
+    // Confia em X-Forwarded-* apenas de proxies listados (TRUST_PROXY).
+    // Default: loopback. Em deploy atrás de nginx em rede Docker, a sub-rede
+    // do proxy deve ser incluída (ex.: "loopback,172.16.0.0/12") — com
+    // trustProxy:true qualquer cliente spoofaria o IP e contornaria o rate
+    // limit / limite por IP da fila de uploads.
+    trustProxy: deps.config.trustProxy,
   } as Parameters<typeof Fastify>[0]) as unknown as FastifyInstance
 
   app.register(multipart, { limits: { fileSize: deps.config.uploadMaxSizeBytes } })

@@ -11,9 +11,9 @@ const MONEY_CHARS_RE = /^[\d.,?]+$/
 function isBrazilianMoney(raw: string): boolean {
   if (!MONEY_CHARS_RE.test(raw)) return false
   const withoutUncertainty = raw.replaceAll('?', '')
-  // Totalmente incerto ("????" ou "??,??") é aceito — o extrator preserva
-  // em vez de chutar. Sem dígitos após remover os '?' → totalmente incerto.
-  if (!/\d/.test(withoutUncertainty)) return true
+  // Totalmente incerto ("????", "??,??") é aceito — o extrator preserva em vez
+  // de chutar. Exige '?' explícito: sem dígitos E sem '?', é lixo (ex.: "..,,").
+  if (!/\d/.test(withoutUncertainty)) return raw.includes('?')
   const digitsAndComma = withoutUncertainty.replaceAll('.', '')
   return /^\d+,\d{1,2}$/.test(digitsAndComma)
 }

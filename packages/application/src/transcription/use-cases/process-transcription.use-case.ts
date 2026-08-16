@@ -1,4 +1,5 @@
 import {
+  type Transcription,
   type TranscriptionId,
   TranscriptionNotFoundError,
   TranscriptionStatus,
@@ -16,6 +17,7 @@ export class ProcessTranscriptionUseCase {
     private readonly pdfExtractor: PdfExtractorPort,
     private readonly ocrEngine: OcrEnginePort,
     private readonly concurrencyLimit = 2,
+    private readonly timeoutMs = 60_000,
   ) {}
 
   async execute(id: TranscriptionId): Promise<void> {
@@ -30,27 +32,13 @@ export class ProcessTranscriptionUseCase {
     }
 
     try {
-      const buffer = await this.storage.read(id.value)
-      const pagesText = await this.pdfExtractor.extractPages(buffer)
-
-      // Páginas escaneadas devolvem texto vazio — fallback para OCR.
-      // Render + OCR em paralelo com limite de concorrência (tesseract é
-      // intensivo; processar tudo de uma vez estouraria a memória).
-      const completeTexts = await runWithConcurrency(
-        pagesText,
-        this.concurrencyLimit,
-        async (text, index) => {
-          if (text.trim()) return text
-          const image = await this.pdfExtractor.renderPage(index, buffer)
-          return this.ocrEngine.recognize(image)
-        },
-      )
-
-      const result = extractorFor(transcription.tipo).extract(completeTexts)
-      transcription.complete(result)
+      // Timeout impede que um job travado (ex.: OCR preso) segure o slot da
+      // fila para sempre — a promise perdedora do race não vira unhandled
+      // rejection e o complete() tardio é bloqueado pelo status já ERRO.
+      await withTimeout(this.process(id, transcription), this.timeoutMs, 'processamento')
     } catch (error) {
-      // Mensagem vazia derrubaria `fail` (que rejeita string vazia) dentro do
-      // próprio catch, deixando a transcrição presa em PROCESSANDO para sempre.
+      // Timeout (ou qualquer falha) não pode segurar o slot da fila para
+      // sempre nem deixar a transcrição presa em PROCESSANDO.
       const message =
         error instanceof Error && error.message.trim() ? error.message : 'erro desconhecido'
       transcription.fail(message)
@@ -58,6 +46,36 @@ export class ProcessTranscriptionUseCase {
 
     await this.repository.save(transcription)
   }
+
+  private async process(id: TranscriptionId, transcription: Transcription): Promise<void> {
+    const buffer = await this.storage.read(id.value)
+    const pagesText = await this.pdfExtractor.extractPages(buffer)
+
+    // Páginas escaneadas devolvem texto vazio — fallback para OCR.
+    // Render + OCR em paralelo com limite de concorrência (tesseract é
+    // intensivo; processar tudo de uma vez estouraria a memória).
+    const completeTexts = await runWithConcurrency(
+      pagesText,
+      this.concurrencyLimit,
+      async (text, index) => {
+        if (text.trim()) return text
+        const image = await this.pdfExtractor.renderPage(index, buffer)
+        return this.ocrEngine.recognize(image)
+      },
+    )
+
+    const result = extractorFor(transcription.tipo).extract(completeTexts)
+    transcription.complete(result)
+  }
+}
+
+/** Executa uma promise com limite de tempo; rejeita com erro legível no estouro. */
+export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} excedeu ${ms}ms`)), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
 /** Executa tasks em lote com no máximo `limit` em andamento. */

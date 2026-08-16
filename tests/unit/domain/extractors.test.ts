@@ -184,4 +184,20 @@ describe('HoleriteExtractor', () => {
     expect(field?.reference).toBe('2,0')
     expect(field?.value).toBe('155,91')
   })
+
+  it('valor com 4+ dígitos sem separador de milhar é capturado inteiro (1234,56)', () => {
+    const page = holeritePage(HoleriteExtractor.extract(['0010 Salário Base 1234,56']))
+    const field = page.fields[0]
+    expect(field?.label).toBe('Salário Base')
+    expect(field?.reference).toBe('')
+    expect(field?.value).toBe('1234,56')
+  })
+
+  it('valor com 4+ dígitos e reference (sem milhar) não corrompe o par', () => {
+    const page = holeritePage(HoleriteExtractor.extract(['0010 Salário Base 1234,56 2.389,77']))
+    const field = page.fields[0]
+    expect(field?.label).toBe('Salário Base')
+    expect(field?.reference).toBe('1234,56')
+    expect(field?.value).toBe('2.389,77')
+  })
 })

@@ -25,11 +25,19 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const exemplosDir = join(root, 'exemplos')
 const outputDir = join(exemplosDir, 'output')
 
+// Apenas os PDFs presentes em exemplos/ — referenciar arquivos inexistentes
+// faria o entregável silenciosamente incompleto.
 const DOCS: { arquivo: string; tipo: DocumentType }[] = [
   { arquivo: 'cartao-ponto-1.pdf', tipo: 'cartao-ponto' },
-  { arquivo: 'cartao-ponto-2.pdf', tipo: 'cartao-ponto' },
+  { arquivo: 'time-card-01.pdf', tipo: 'cartao-ponto' },
+  { arquivo: 'time-card-02.pdf', tipo: 'cartao-ponto' },
+  { arquivo: 'time-card-03.pdf', tipo: 'cartao-ponto' },
+  { arquivo: 'time-card-04.pdf', tipo: 'cartao-ponto' },
   { arquivo: 'holerite-1.pdf', tipo: 'holerite' },
-  { arquivo: 'holerite-2.pdf', tipo: 'holerite' },
+  { arquivo: 'payroll-01.pdf', tipo: 'holerite' },
+  { arquivo: 'payroll-02.pdf', tipo: 'holerite' },
+  { arquivo: 'payroll-03.pdf', tipo: 'holerite' },
+  { arquivo: 'payroll-04.pdf', tipo: 'holerite' },
 ]
 
 async function main() {
@@ -42,11 +50,10 @@ async function main() {
   const pdfExtractor = new PdfJsExtractorAdapter()
   const generator = new ExcelJsGeneratorAdapter()
 
-  const create = new CreateTranscriptionUseCase(
-    repository,
-    storage,
-    { subscribe: () => {}, publish: () => {} },
-  )
+  const create = new CreateTranscriptionUseCase(repository, storage, {
+    subscribe: () => {},
+    publish: () => {},
+  })
   const process = new ProcessTranscriptionUseCase(repository, storage, pdfExtractor, ocr)
   const exportSheet = new ExportSpreadsheetUseCase(repository, generator)
 
@@ -68,9 +75,7 @@ async function main() {
 
     for (const formato of [ExportFormat.XLSX, ExportFormat.CSV, ExportFormat.JSON]) {
       if (!transcription || transcription.status !== 'concluido') {
-        console.log(
-          `Falha: ${doc.arquivo} → status ${transcription?.status ?? 'ausente'}\n`,
-        )
+        console.log(`Falha: ${doc.arquivo} → status ${transcription?.status ?? 'ausente'}\n`)
         break
       }
       const generated = await exportSheet.execute({

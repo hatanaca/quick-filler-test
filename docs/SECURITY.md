@@ -4,14 +4,14 @@
 
 ### Upload
 
-| Medida | Detalhe |
-|--------|---------|
-| Limite de tamanho | 20MB (configurável via `UPLOAD_MAX_SIZE_MB`) |
-| Validação | Magic bytes `%PDF` nos primeiros 5 bytes — extensão/MIME não são confiáveis |
-| Nome sanitizado | Arquivo salvo como `<uuid>.pdf` — nome original (PII) descartado |
-| Uploads simultâneos | Limite por IP configurável (`UPLOAD_MAX_CONCURRENT_PER_IP`, padrão 3) |
-| PDF corrompido | Processamento falha → `status: "erro"` com mensagem legível |
-| PDF gigante | Rejeitado com 4xx no upload |
+| Medida              | Detalhe                                                                     |
+| ------------------- | --------------------------------------------------------------------------- |
+| Limite de tamanho   | 20MB (configurável via `UPLOAD_MAX_SIZE_MB`)                                |
+| Validação           | Magic bytes `%PDF` nos primeiros 5 bytes — extensão/MIME não são confiáveis |
+| Nome sanitizado     | Arquivo salvo como `<uuid>.pdf` — nome original (PII) descartado            |
+| Uploads simultâneos | Limite por IP configurável (`UPLOAD_MAX_CONCURRENT_PER_IP`, padrão 3)       |
+| PDF corrompido      | Processamento falha → `status: "erro"` com mensagem legível                 |
+| PDF gigante         | Rejeitado com 4xx no upload                                                 |
 
 ### Política de retenção
 
@@ -31,8 +31,8 @@ substituídos por `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 
 - Helmet (headers de segurança, CSP)
 - CORS com origin whitelist (`CORS_ORIGIN`, suporta múltiplas separadas por vírgula)
-- Rate limit por IP (`RATE_LIMIT_MAX`, padrão 100/min)
-- Validação de entrada com Zod/VOs de domínio em todas as rotas
+- Rate limit por IP (`RATE_LIMIT_MAX`, padrão 300/min)
+- Validação de entrada com VOs de domínio em todas as rotas
 - **IDs de transcrição validados como UUID** — impede path traversal via
   `TranscriptionId` em caminhos de arquivo (`uploads/<id>.pdf`) e em headers
   (`Content-Disposition`)
@@ -43,7 +43,7 @@ substituídos por `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 
 ### Docker
 
-- `USER node` — container não roda como root
+- `USER app` — container não roda como root (usuário `app` criado no Dockerfile)
 - Multi-stage: imagem de produção sem ferramentas de build
 - `.env` nunca entra na imagem; use `--env-file` ou secrets
 - Healthcheck em `/healthz`
@@ -58,14 +58,14 @@ substituídos por `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 
 ### Upload
 
-| Measure | Detail |
-|---------|--------|
-| Size limit | 20MB (configurable via `UPLOAD_MAX_SIZE_MB`) |
-| Validation | `%PDF` magic bytes in the first 5 bytes — extension/MIME are not trusted |
-| Sanitized name | File saved as `<uuid>.pdf` — original name (PII) discarded |
-| Concurrent uploads | Per-IP limit configurable (`UPLOAD_MAX_CONCURRENT_PER_IP`, default 3) |
-| Corrupted PDF | Processing fails → `status: "erro"` with a readable message |
-| Oversized PDF | Rejected with 4xx at upload |
+| Measure            | Detail                                                                   |
+| ------------------ | ------------------------------------------------------------------------ |
+| Size limit         | 20MB (configurable via `UPLOAD_MAX_SIZE_MB`)                             |
+| Validation         | `%PDF` magic bytes in the first 5 bytes — extension/MIME are not trusted |
+| Sanitized name     | File saved as `<uuid>.pdf` — original name (PII) discarded               |
+| Concurrent uploads | Per-IP limit configurable (`UPLOAD_MAX_CONCURRENT_PER_IP`, default 3)    |
+| Corrupted PDF      | Processing fails → `status: "erro"` with a readable message              |
+| Oversized PDF      | Rejected with 4xx at upload                                              |
 
 ### Retention policy
 
@@ -85,8 +85,8 @@ replaced with `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 
 - Helmet (security headers, CSP)
 - CORS with origin whitelist (`CORS_ORIGIN`, comma-separated multiple origins)
-- Per-IP rate limit (`RATE_LIMIT_MAX`, default 100/min)
-- Input validation with Zod/domain VOs on all routes
+- Per-IP rate limit (`RATE_LIMIT_MAX`, default 300/min)
+- Input validation with domain VOs on all routes
 - **Transcription IDs validated as UUID** — prevents path traversal via
   `TranscriptionId` in file paths (`uploads/<id>.pdf`) and in headers
   (`Content-Disposition`)
@@ -97,7 +97,7 @@ replaced with `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 
 ### Docker
 
-- `USER node` — container does not run as root
+- `USER app` — container does not run as root (user `app` created in the Dockerfile)
 - Multi-stage: production image without build tooling
 - `.env` never enters the image; use `--env-file` or secrets
 - Healthcheck at `/healthz`

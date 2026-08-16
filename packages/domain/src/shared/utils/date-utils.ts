@@ -4,6 +4,35 @@ export interface ParsedDate {
   year: number
 }
 
+/** Abreviações de mês em português (3 letras) usadas em fichas financeiras. */
+export const PORTUGUESE_MONTHS: Record<string, number> = {
+  jan: 1,
+  fev: 2,
+  mar: 3,
+  abr: 4,
+  mai: 5,
+  jun: 6,
+  jul: 7,
+  ago: 8,
+  set: 9,
+  out: 10,
+  nov: 11,
+  dez: 12,
+}
+
+/**
+ * Parseia competência no formato "abr-17" (mês abreviado + ano 2 dígitos).
+ * Assume anos >= 2000 para "00"-"99" (os documentos de exemplo vão de 2017 a 2025).
+ */
+export function parseMonthYearAbbr(raw: string): { month: number; year: number } | null {
+  const match = /^([a-zçã]{3})-(\d{2})$/.exec(raw.trim().toLowerCase())
+  if (!match) return null
+  const month = PORTUGUESE_MONTHS[match[1] ?? '']
+  if (!month) return null
+  const year = 2000 + Number(match[2])
+  return { month, year }
+}
+
 export type DateParseResult =
   { status: 'readable'; date: ParsedDate } | { status: 'unreadable' } | { status: 'impossible' }
 

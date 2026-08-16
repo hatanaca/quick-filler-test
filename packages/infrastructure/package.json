@@ -21,15 +21,11 @@
     "@napi-rs/canvas": "^1.0.5",
     "@quickfiller/application": "*",
     "@quickfiller/domain": "*",
-    "csv-stringify": "^6.8.3",
     "exceljs": "^4.4.0",
     "fastify": "^5.11.3",
-    "nanoid": "^6.0.1",
-    "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^6.2.108",
     "pino": "^9.5.0",
-    "tesseract.js": "^7.0.0",
-    "zod": "^4.4.3"
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0"

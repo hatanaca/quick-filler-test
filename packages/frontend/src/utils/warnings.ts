@@ -9,6 +9,15 @@ export interface RowWarning {
 
 const DAY_MS = 86_400_000
 
+// Mesmo critério do domínio (date-utils): data fora do calendário real
+// (31/02, 29/02 não-bissexto) é impossível — não vira âncora de sequência.
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+function daysInMonth(month: number, year: number): number {
+  if (month === 2 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) return 29
+  return DAYS_IN_MONTH[month - 1] ?? 0
+}
+
 function parseDate(raw: string): { day: number; month: number; year: number } | null {
   if (raw.includes('?')) return null
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw)
@@ -16,7 +25,8 @@ function parseDate(raw: string): { day: number; month: number; year: number } | 
   const day = Number(match[1])
   const month = Number(match[2])
   const year = Number(match[3])
-  if (day < 1 || day > 31 || month < 1 || month > 12) return null
+  if (day < 1 || month < 1 || month > 12) return null
+  if (day > daysInMonth(month, year)) return null
   return { day, month, year }
 }
 
@@ -143,11 +153,15 @@ export function flattenHolerite(pages: HoleritePage[]): FlatHoleriteRow[] {
   let prevReadable: HoleritePage | null = null
 
   for (const page of pages) {
+    // Último field com o label — mesmo critério do backend (SpreadsheetBuilder
+    // usa Map, onde a última ocorrência vence). `.find()` pegaria o 1º e a
+    // planilha exportada divergiria da tabela de revisão.
+    const byLabel = new Map(page.fields.map((f) => [f.label, f.value]))
     const cells: (string | null)[] = [
       String(page.page),
       page.month,
       page.year,
-      ...headers.slice(3).map((label) => page.fields.find((f) => f.label === label)?.value ?? null),
+      ...headers.slice(3).map((label) => byLabel.get(label) ?? null),
     ]
     rows.push({
       kind: 'holerite',

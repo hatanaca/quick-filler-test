@@ -12,6 +12,11 @@ export interface AppConfig {
   tesseractLang: string
   ocrWorkerPoolSize: number
   trustProxy: readonly (string | number)[]
+  pdfRenderScale: number
+  ocrConfidenceThreshold: number
+  ocrPreprocess: 'off' | 'auto' | 'color' | 'grayscale'
+  ocrPsm: number
+  ocrWhitelist: string
 }
 
 function numberFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -43,6 +48,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     rateLimitWindowMs: positiveFromEnv(env, 'RATE_LIMIT_WINDOW_MS', 60_000),
     tesseractLang: env.TESSERACT_LANG ?? 'por',
     ocrWorkerPoolSize: positiveFromEnv(env, 'OCR_WORKER_POOL_SIZE', 2),
+    pdfRenderScale: positiveFromEnv(env, 'PDF_RENDER_SCALE', 4),
+    ocrConfidenceThreshold: positiveFromEnv(env, 'OCR_CONFIDENCE_THRESHOLD', 40),
+    ocrPreprocess: (env.OCR_PREPROCESS as AppConfig['ocrPreprocess']) ?? 'auto',
+    ocrPsm: positiveFromEnv(env, 'OCR_PSM', 6),
+    ocrWhitelist: env.OCR_WHITELIST ?? '',
     // CIDRs separados por vírgula; default apenas loopback (anti-spoofing).
     // Em deploy atrás de nginx em rede Docker, incluir a sub-rede do proxy
     // (ex.: "loopback,172.16.0.0/12") para o rate limit/fila verem o IP real.

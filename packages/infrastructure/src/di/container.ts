@@ -32,8 +32,14 @@ export function buildContainer(config: AppConfig): Container {
   const eventBus = new InMemoryEventBus()
   const repository = new InMemoryTranscriptionRepository()
   const storage = new DiskFileStorage()
-  const pdfExtractor = new PdfJsExtractorAdapter()
-  const ocr = new TesseractOcrAdapter(config.tesseractLang)
+  const pdfExtractor = new PdfJsExtractorAdapter(config.pdfRenderScale)
+  const ocr = new TesseractOcrAdapter(
+    config.tesseractLang,
+    config.ocrConfidenceThreshold,
+    config.ocrPreprocess,
+    config.ocrPsm,
+    config.ocrWhitelist,
+  )
   const generator = new ExcelJsGeneratorAdapter()
 
   const createTranscription = new CreateTranscriptionUseCase(repository, storage, eventBus)

@@ -90,10 +90,15 @@ descobre a conclusão por polling em `GET /api/transcricoes/:id`.
 - Ferramenta: **Tesseract.js** (local, modelo `por`).
 - Detecção: `extractPages` devolve o texto por página; páginas sem texto são
   renderizadas como imagem e enviadas ao OCR.
-- Limitação conhecida: Tesseract é bom, mas não é um serviço de nuvem —
-  a calibração dos `?` depende da qualidade da digitalização. Documentos
-  escaneados com contraste ruim (ex.: `time-card-04.pdf`) podem sair
-  honestamente vazios em vez de inventar valores.
+- **Pré-processamento de imagem** antes do OCR: detecção automática de tinta
+  vermelha (para carimbos), grayscale, contraste 1-99%, binarização
+  adaptativa de Sauvola, correção de deskew por projeção.
+- **Incerteza por caractere**: símbolos com confiança abaixo do limiar
+  (`OCR_CONFIDENCE_THRESHOLD`, padrão 40) são substituídos por `?`.
+- **PSM configurável** (`OCR_PSM`, padrão 6 — bloco uniforme, bom para tabelas).
+- Limitação conhecida: tinta vermelha desbotada e dot-matrix (ex.:
+  `time-card-04.pdf`) é ilegível pelo Tesseract local — sai honestamente
+  vazio. Manuscrito (cursivo) fica para revisão manual na tabela editável.
 
 ## Layouts suportados
 

@@ -21,9 +21,12 @@ const COLUMN_GAP_THRESHOLD = 8
  * - extractPages: texto embutido por página, com quebras de linha
  *   reconstruídas a partir das posições Y dos itens de texto
  *   (PDFs reais não têm \n — a linha é inferida pela geometria)
- * - renderPage: renderiza página como PNG para fallback de OCR
+ * - renderPage: renderiza página como PNG para fallback de OCR.
+ *   A escala de renderização afeta diretamente a qualidade do Tesseract:
+ *   A4 a scale=2 ≈ 144 DPI (abaixo do recomendado de 300); scale=4 ≈ 288 DPI.
  */
 export class PdfJsExtractorAdapter implements PdfExtractorPort {
+  constructor(private readonly renderScale = 4) {}
   async extractPages(buffer: Buffer): Promise<string[]> {
     const task = getDocument({ data: new Uint8Array(buffer) })
     try {
@@ -92,7 +95,7 @@ export class PdfJsExtractorAdapter implements PdfExtractorPort {
       const doc = await task.promise
       const page = await doc.getPage(pageIndex + 1)
       try {
-        const viewport = page.getViewport({ scale: 2 })
+        const viewport = page.getViewport({ scale: this.renderScale })
 
         const canvas = createCanvas(viewport.width, viewport.height)
         const ctx = canvas.getContext('2d')

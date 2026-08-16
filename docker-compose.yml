@@ -18,6 +18,11 @@ services:
       RATE_LIMIT_WINDOW_MS: 60000
       TESSERACT_LANG: por
       OCR_WORKER_POOL_SIZE: 2
+      PDF_RENDER_SCALE: 4
+      OCR_CONFIDENCE_THRESHOLD: 40
+      OCR_PREPROCESS: auto
+      OCR_PSM: 6
+      OCR_WHITELIST: ''
       # nginx conecta ao backend pela rede Docker (não-loopback); confiar na
       # sub-rede do proxy é necessário para rate limit/fila verem o IP real.
       # 172.16.0.0/12 cobre as redes bridge padrão do Docker.

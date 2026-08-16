@@ -37,6 +37,11 @@ const config = {
   tesseractLang: 'por',
   ocrWorkerPoolSize: 1,
   trustProxy: ['loopback' as const],
+  pdfRenderScale: 4,
+  ocrConfidenceThreshold: 40,
+  ocrPreprocess: 'auto',
+  ocrPsm: 6,
+  ocrWhitelist: '',
 } as const
 
 function multipart(

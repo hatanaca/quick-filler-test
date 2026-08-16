@@ -21,13 +21,24 @@
 
 ### Commits (Conventional Commits)
 
+Utilize o padrão Conventional Commits com **scope** para indicar a área alterada:
+
 ```
-feat: add holerite spreadsheet export
-fix: reject non-PDF uploads by magic bytes
-test: cover warning calculator edge cases
+feat(domain): add holerite spreadsheet export
+fix(infra): reject non-PDF uploads by magic bytes
+test(domain): cover warning calculator edge cases
 docs: document retention policy
-chore: bump fastify to 5.x
+chore(deps): bump fastify to 5.x
 ```
+
+**Scopes disponíveis:** `domain`, `infra`, `frontend`, `app`, `deps`, `ci`, `test`
+
+**Regras de atomicidade:**
+
+- Cada commit deve conter apenas alterações de **uma área** (domínio, infraestrutura, frontend, etc.)
+- Máximo de **20-30 arquivos** por commit
+- Se um fix afeta domínio + infra, divida em dois commits separados
+- Evite commits que misturam features, fixes e docs
 
 ### Arquitetura (DDD)
 
@@ -64,13 +75,24 @@ chore: bump fastify to 5.x
 
 ### Commits (Conventional Commits)
 
+Use Conventional Commits with **scope** to indicate the changed area:
+
 ```
-feat: add holerite spreadsheet export
-fix: reject non-PDF uploads by magic bytes
-test: cover warning calculator edge cases
+feat(domain): add holerite spreadsheet export
+fix(infra): reject non-PDF uploads by magic bytes
+test(domain): cover warning calculator edge cases
 docs: document retention policy
-chore: bump fastify to 5.x
+chore(deps): bump fastify to 5.x
 ```
+
+**Available scopes:** `domain`, `infra`, `frontend`, `app`, `deps`, `ci`, `test`
+
+**Atomicity rules:**
+
+- Each commit should contain changes from only **one area** (domain, infrastructure, frontend, etc.)
+- Maximum of **20-30 files** per commit
+- If a fix affects domain + infra, split into two separate commits
+- Avoid commits that mix features, fixes, and docs
 
 ### Architecture (DDD)
 

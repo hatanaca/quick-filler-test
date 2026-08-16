@@ -5,6 +5,9 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+# npm >= 11 (npm 10.9.x falha ao executar o lifecycle `prepare` do husky)
+RUN npm install -g npm@11
+
 # Dependências primeiro (aproveita cache do Docker)
 COPY package.json package-lock.json ./
 COPY packages/domain/package.json packages/domain/
@@ -27,6 +30,9 @@ FROM node:22-alpine AS backend
 
 WORKDIR /app
 ENV NODE_ENV=production
+
+# npm >= 11 (npm 10.9.x falha ao executar o lifecycle `prepare` do husky)
+RUN npm install -g npm@11
 
 # Dependências de produção dos pacotes
 COPY package.json package-lock.json ./

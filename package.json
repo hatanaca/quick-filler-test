@@ -44,7 +44,7 @@
     "pdfkit": "^0.19.1",
     "prettier": "^3.4.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.18.0",
     "vitest": "^3.0.0"
   },

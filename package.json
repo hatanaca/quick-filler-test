@@ -17,7 +17,8 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace=@quickfiller/infrastructure",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=@quickfiller/domain && npm run build --workspace=@quickfiller/application && npm run build --workspace=@quickfiller/infrastructure && npm run build --workspace=@quickfiller/frontend",
+    "prepare": "husky || true",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

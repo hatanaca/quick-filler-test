@@ -62,6 +62,20 @@ describe('GetTranscriptionUseCase', () => {
     expect(result.value).toEqual({ pages: [] })
   })
 
+  it('cartão de ponto com pages vazio serializa como cartão (não holerite)', async () => {
+    const repo = new FakeRepository()
+    const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
+    const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
+    t.complete({ pages: [] })
+    await repo.save(t)
+    const useCase = new GetTranscriptionUseCase(repo)
+
+    const result = await useCase.execute(id)
+    // antes: 'days' in firstPage era o discriminador e pages vazio caía em holerite
+    expect(result.value).toEqual({ pages: [] })
+    expect(result.tipo).toBe(DocumentType.CARTAO_PONTO)
+  })
+
   it('status ERRO → erro legível', async () => {
     const repo = new FakeRepository()
     const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')

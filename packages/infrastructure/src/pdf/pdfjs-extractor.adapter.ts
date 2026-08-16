@@ -20,12 +20,17 @@ export class PdfJsExtractorAdapter implements PdfExtractorPort {
     const doc = await task.promise
     try {
       const texts = await Promise.all(
-        Array.from({ length: doc.numPages }, (_, pageNumber) =>
-          doc
-            .getPage(pageNumber + 1)
-            .then((page) => page.getTextContent())
-            .then((content) => this.groupByLine(content.items as unknown as TextItem[])),
-        ),
+        Array.from({ length: doc.numPages }, async (_, pageNumber) => {
+          const page = await doc.getPage(pageNumber + 1)
+          try {
+            const content = await page.getTextContent()
+            return this.groupByLine(content.items as unknown as TextItem[])
+          } finally {
+            // Libera os dados da página do pdf.js; sem cleanup o pico de
+            // memória cresce com o número de páginas em PDFs grandes.
+            page.cleanup()
+          }
+        }),
       )
       return texts
     } finally {
@@ -61,18 +66,22 @@ export class PdfJsExtractorAdapter implements PdfExtractorPort {
     const doc = await task.promise
     try {
       const page = await doc.getPage(pageIndex + 1)
-      const viewport = page.getViewport({ scale: 2 })
+      try {
+        const viewport = page.getViewport({ scale: 2 })
 
-      const canvas = createCanvas(viewport.width, viewport.height)
-      const ctx = canvas.getContext('2d')
+        const canvas = createCanvas(viewport.width, viewport.height)
+        const ctx = canvas.getContext('2d')
 
-      await page.render({
-        canvasContext: ctx,
-        canvas: canvas as never,
-        viewport,
-      }).promise
+        await page.render({
+          canvasContext: ctx,
+          canvas: canvas as never,
+          viewport,
+        }).promise
 
-      return canvas.toBuffer('image/png')
+        return canvas.toBuffer('image/png')
+      } finally {
+        page.cleanup()
+      }
     } finally {
       await task.destroy()
     }

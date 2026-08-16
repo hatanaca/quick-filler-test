@@ -29,8 +29,15 @@ export class CreateTranscriptionUseCase {
     const id = TranscriptionId.from(randomUUID())
     const transcription = Transcription.create({ id, tipo: input.tipo })
 
-    await this.repository.save(transcription)
+    // Arquivo primeiro: se o disco falhar, não fica registro PROCESSANDO
+    // órfão (sem arquivo e sem job agendado).
     await this.storage.save(id.value, input.arquivo)
+    try {
+      await this.repository.save(transcription)
+    } catch (error) {
+      await this.storage.delete(id.value).catch(() => {})
+      throw error
+    }
 
     for (const event of transcription.pullEvents()) {
       this.eventBus.publish(event)

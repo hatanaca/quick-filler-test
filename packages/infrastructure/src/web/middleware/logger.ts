@@ -17,6 +17,14 @@ function redactPii(value: unknown): unknown {
     }
     return redacted
   }
+  if (value && typeof value === 'object') {
+    // headers chega como objeto — redige cada valor string, não o objeto inteiro
+    const redacted: Record<string, unknown> = {}
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      redacted[key] = redactPii(entry)
+    }
+    return redacted
+  }
   return value
 }
 
@@ -35,8 +43,8 @@ export function createLoggerOptions(level = 'info') {
       req(req: { method?: string; url?: string; ip?: string; headers?: unknown }) {
         return {
           method: req.method,
-          url: req.url,
-          ip: redactPii(req.ip),
+          url: redactPii(req.url) as string,
+          ip: redactPii(req.ip) as string,
           headers: redactPii(req.headers),
         }
       },

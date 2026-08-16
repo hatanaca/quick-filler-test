@@ -76,11 +76,16 @@ export class ExcelJsGeneratorAdapter implements SpreadsheetGeneratorPort {
   }
 
   private buildCsv(headers: string[], rows: SpreadsheetRowData[]): Buffer {
+    // Neutraliza fórmulas do Excel: célula iniciada com = + - @ é tratada como
+    // texto (prefixo '). O conteúdo vem de OCR/PUT, portanto controlado pelo
+    // usuário — não pode executar código em quem baixa a planilha.
+    const neutralizeFormula = (value: string) => (/^[=+\-@]/.test(value) ? `'${value}` : value)
     const escape = (value: string) => {
-      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-        return `"${value.replaceAll('"', '""')}"`
+      const safe = neutralizeFormula(value)
+      if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
+        return `"${safe.replaceAll('"', '""')}"`
       }
-      return value
+      return safe
     }
     const lines = [
       headers.map(escape).join(','),

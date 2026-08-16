@@ -31,25 +31,22 @@ export function registerTranscriptionRoutes(
   app: FastifyInstance,
   deps: TranscriptionRoutesDeps,
 ): void {
-  const runInBackground = (id: { value: string }) => {
-    setImmediate(() => {
-      deps.processTranscription.execute(TranscriptionId.from(id.value)).catch((error: unknown) => {
-        app.log.error(error, `falha ao processar transcrição ${id.value}`)
-      })
-    })
-  }
-
   app.post('/api/transcricoes', async (request: FastifyRequest, reply) => {
+    // O slot da fila cobre upload E processamento: o limite per-IP deixa de ser
+    // contornado por N uploads sequenciais que disparam N jobs concorrentes.
     return deps.uploadQueue.run(request.ip, async () => {
       const parts = request.parts()
       let arquivo: Buffer | null = null
       let tipo: string | null = null
 
       for await (const part of parts) {
-        if (part.type === 'file' && part.fieldname === 'arquivo') {
+        if (part.type === 'file') {
           const chunks: Buffer[] = []
           let total = 0
+          // Drena o stream de TODAS as file parts — deixar uma parte sem
+          // consumir pendura o parser do multipart até o timeout da requisição.
           for await (const chunk of part.file) {
+            if (part.fieldname !== 'arquivo') continue
             chunks.push(chunk as Buffer)
             total += chunk.length
             if (total > deps.uploadMaxSizeBytes) {
@@ -58,7 +55,7 @@ export function registerTranscriptionRoutes(
               )
             }
           }
-          arquivo = Buffer.concat(chunks)
+          if (part.fieldname === 'arquivo') arquivo = Buffer.concat(chunks)
         } else if (part.type === 'field' && part.fieldname === 'tipo') {
           tipo = String(part.value)
         }
@@ -82,10 +79,16 @@ export function registerTranscriptionRoutes(
         arquivo,
         nomeArquivo: 'upload.pdf',
       })
-      runInBackground(id)
 
+      // 202 imediato para o cliente; o processamento segue no slot da fila.
       reply.status(202)
-      return { id: id.value }
+      await reply.send({ id: id.value })
+
+      try {
+        await deps.processTranscription.execute(TranscriptionId.from(id.value))
+      } catch (error) {
+        app.log.error(error, `falha ao processar transcrição ${id.value}`)
+      }
     })
   })
 

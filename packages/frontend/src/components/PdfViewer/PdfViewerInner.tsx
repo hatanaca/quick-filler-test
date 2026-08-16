@@ -11,7 +11,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 export function PdfViewerInner({ file }: { file: File }) {
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
-  const [url, setUrl] = useState<string | null>(() => URL.createObjectURL(file))
+  // A URL é criada apenas no effect: criar no initializer do useState vazava
+  // um blob por montagem (a URL inicial nunca era revogada).
+  const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const next = URL.createObjectURL(file)

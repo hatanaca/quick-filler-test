@@ -130,7 +130,9 @@ export function flattenCartao(pages: CartaoPontoPage[]): FlatCartaoRow[] {
       warning: cartaoRowWarning(day, prevReadable),
       day,
     })
-    if (!day.date_raw.includes('?')) prevReadable = day
+    // Só datas parseáveis viram âncora — data fora do formato (sem '?') não
+    // pode silenciar os avisos de sequência dos dias seguintes.
+    if (parseDate(day.date_raw)) prevReadable = day
   }
   return rows
 }

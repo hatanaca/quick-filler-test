@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { updateTranscription } from './api/client'
+import type { Transcription } from './types'
 import { Upload } from './components/Upload/Upload'
 import { ReviewTable } from './components/ReviewTable/ReviewTable'
 import { PdfViewer } from './components/PdfViewer/PdfViewer'
@@ -14,6 +15,9 @@ export default function App() {
   const { transcricao, erro: fetchErro } = useTranscricao(id)
   const [salvo, setSalvo] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Serializa PUTs: dois saves debounced sobrepostos não podem chegar fora de
+  // ordem no servidor (payload antigo gravado por último revertia a edição).
+  const saveChain = useRef<Promise<void>>(Promise.resolve())
 
   // limpa o debounce pendente no unmount para não disparar PUT em estado morto
   useEffect(
@@ -34,11 +38,15 @@ export default function App() {
       // debounce da persistência: salva 500ms após a última edição
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(() => {
-        updateTranscription(id, value)
+        saveChain.current = saveChain.current
+          .then(() => updateTranscription(id, value))
           .then(() => {
             setSalvo(true)
-            // reflete as correções na tabela (o cache fica stale após o PUT)
-            void queryClient.invalidateQueries({ queryKey: ['transcricao', id] })
+            // Atualiza o cache com o valor que enviamos — sem refetch, que
+            // sobrescreveria caracteres digitados depois do snapshot do PUT.
+            queryClient.setQueryData<Transcription>(['transcricao', id], (prev) =>
+              prev ? { ...prev, value: value as Transcription['value'] } : prev,
+            )
           })
           .catch(() => setSalvo(false))
       }, 500)

@@ -10,11 +10,8 @@ import {
   UpdateTranscriptionUseCase,
 } from '@quickfiller/application'
 import {
-  DayRecord,
-  PageCartaoPonto,
-  Punch,
   type Transcription,
-  TranscriptionId,
+  type TranscriptionId,
   type TranscriptionRepository,
   type FileStoragePort,
   type PdfExtractorPort,
@@ -216,8 +213,8 @@ describe('API HTTP — contrato do desafio', () => {
       headers: { 'content-type': 'multipart/form-data; boundary=test' },
     })
     const { id } = post.json()
-    const stored = await repo.findById(TranscriptionId.from(id))
-    stored?.complete({ pages: [PageCartaoPonto.from({ page: 1, days: [] })] })
+    // o processamento roda dentro do POST (slot da fila) — aguarda concluir
+    await waitForDone(app, id)
 
     const novoValue = {
       pages: [
@@ -254,8 +251,7 @@ describe('API HTTP — contrato do desafio', () => {
       headers: { 'content-type': 'multipart/form-data; boundary=test' },
     })
     const { id } = post.json()
-    const stored = await repo.findById(TranscriptionId.from(id))
-    stored?.complete({ pages: [] })
+    await waitForDone(app, id)
 
     const res = await app.inject({
       method: 'PUT',
@@ -278,6 +274,8 @@ describe('API HTTP — contrato do desafio', () => {
   })
 
   it('GET /api/transcricoes/:id/planilha?formato=xlsx → 200', async () => {
+    // extrator fake com texto real de cartão para a planilha ter linhas
+    pdfExtractor.pagesText = ['21/05/2019 08:25 12:00 13:00 18:25']
     const post = await app.inject({
       method: 'POST',
       url: '/api/transcricoes',
@@ -285,23 +283,7 @@ describe('API HTTP — contrato do desafio', () => {
       headers: { 'content-type': 'multipart/form-data; boundary=test' },
     })
     const { id } = post.json()
-    const stored = await repo.findById(TranscriptionId.from(id))
-    stored?.complete({
-      pages: [
-        PageCartaoPonto.from({
-          page: 1,
-          days: [
-            DayRecord.from({
-              date_raw: '21/05/2019',
-              punches: [
-                Punch.from({ kind: 'IN', time_raw: '08:25', time_hhmm: '08:25' }),
-                Punch.from({ kind: 'OUT', time_raw: '18:25', time_hhmm: '18:25' }),
-              ],
-            }),
-          ],
-        }),
-      ],
-    })
+    await waitForDone(app, id)
 
     const res = await app.inject({
       method: 'GET',
@@ -345,4 +327,20 @@ function createMultipart(file?: Buffer, tipo?: string): string {
   }
   body += '--test--\r\n'
   return body
+}
+
+/** Aguarda a transcrição sair de "processando" (o processamento roda no slot da fila). */
+async function waitForDone(
+  app: FastifyInstance,
+  id: string,
+  timeoutMs = 5_000,
+): Promise<{ status: string }> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const res = await app.inject({ method: 'GET', url: `/api/transcricoes/${id}` })
+    const body = res.json()
+    if (body.status !== 'processando') return body
+    await new Promise((r) => setTimeout(r, 25))
+  }
+  throw new Error('timeout aguardando processamento')
 }

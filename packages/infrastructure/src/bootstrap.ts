@@ -10,8 +10,18 @@ const retentionMs = config.retentionMinutes * 60_000
 const cleanupTimer = setInterval(
   async () => {
     try {
-      const removed = await container.repository.deleteOlderThan(retentionMs)
-      if (removed > 0) app.log.info({ removed }, 'transcrições expiradas removidas pela retenção')
+      const expiredIds = await container.repository.deleteOlderThan(retentionMs)
+      // A retenção também precisa apagar os PDFs do disco — só remover do
+      // repositório deixaria arquivos órfãos (até 20MB cada) acumulando.
+      for (const id of expiredIds) {
+        await container.storage.delete(id)
+      }
+      if (expiredIds.length > 0) {
+        app.log.info(
+          { removed: expiredIds.length },
+          'transcrições expiradas removidas pela retenção',
+        )
+      }
     } catch (error) {
       // falha na retenção não deve derrubar o processo; tenta de novo no próximo ciclo
       app.log.error(error, 'falha ao executar limpeza por retenção')

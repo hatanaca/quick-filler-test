@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { WarningCalculator, DayRecord, PageHolerite, PayrollField, PayrollBase, Punch } from '@quickfiller/domain'
+import {
+  WarningCalculator,
+  DayRecord,
+  PageHolerite,
+  PayrollField,
+  PayrollBase,
+  Punch,
+} from '@quickfiller/domain'
 
 const punch = (kind: 'IN' | 'OUT', time: string) =>
   Punch.from({ kind, time_raw: time, time_hhmm: time })
@@ -13,16 +20,23 @@ const page = (page: number, month: string, year = '2020', withData = true) =>
     year,
     month,
     fields: withData
-      ? [PayrollField.from({ code: '0010', label: 'Salário Base', reference: '', value: '2.389,77' })]
+      ? [
+          PayrollField.from({
+            code: '0010',
+            label: 'Salário Base',
+            reference: '',
+            value: '2.389,77',
+          }),
+        ]
       : [],
-    bases: withData
-      ? [PayrollBase.from({ label: 'Base INSS', value: '2.545,68' })]
-      : [],
+    bases: withData ? [PayrollBase.from({ label: 'Base INSS', value: '2.545,68' })] : [],
   })
 
 describe('WarningCalculator — cartão de ponto', () => {
   it('detecta batidas ímpares', () => {
-    const days = [day('21/05/2019', [punch('IN', '08:00'), punch('OUT', '12:00'), punch('IN', '13:00')])]
+    const days = [
+      day('21/05/2019', [punch('IN', '08:00'), punch('OUT', '12:00'), punch('IN', '13:00')]),
+    ]
     const warnings = WarningCalculator.cartaoPonto(days)
     expect(warnings.find((w) => w.index === 0)?.types).toContain('odd-punches')
   })
@@ -62,6 +76,21 @@ describe('WarningCalculator — cartão de ponto', () => {
   it('primeiro dia nunca é não sequencial', () => {
     const days = [day('25/05/2019')]
     expect(WarningCalculator.cartaoPonto(days)).toEqual([])
+  })
+
+  it('data impossível não vira âncora (dias seguintes ainda comparam com a legível anterior)', () => {
+    const days = [day('01/01/2023'), day('38/07/2023'), day('06/01/2023')]
+    const warnings = WarningCalculator.cartaoPonto(days)
+    // 38/07 é impossível → marcada como não sequencial (erro de leitura)
+    expect(warnings.find((w) => w.index === 1)?.types).toContain('non-sequential-date')
+    // 06/01 compara com 01/01 (âncora legível) → 5 dias de salto
+    expect(warnings.find((w) => w.index === 2)?.types).toContain('non-sequential-date')
+  })
+
+  it('data impossível por dia-do-mês (31/02) não vira âncora', () => {
+    const days = [day('01/01/2023'), day('31/02/2023'), day('03/01/2023')]
+    const warnings = WarningCalculator.cartaoPonto(days)
+    expect(warnings.find((w) => w.index === 2)?.types).toContain('non-sequential-date')
   })
 })
 

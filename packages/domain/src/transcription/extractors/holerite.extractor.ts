@@ -6,7 +6,9 @@ import type { DocumentExtractor } from './extractor-registry.js'
 
 const COMPETENCIA_RE = /(?:Compet[eê]ncia|referente a|compet[eê]ncia)\s*[:.]?\s*(\d{2})\/(\d{4})/i
 const FIELD_RE = /^(\d{4})\s+(.+)$/
-const MONEY_RE = /\d{1,3}(?:\.\d{3})*,\d{2}/g
+// '?' representa incerteza de OCR por caractere; sem ele, valores parciais
+// (ex.: "2.38?,77") escapam do match e corrompem label/value.
+const MONEY_RE = /[0-9?]{1,3}(?:[.][0-9?]{3})*,[0-9?]{1,2}/g
 const BASE_LABELS = [
   'Base INSS',
   'Base IR',
@@ -64,7 +66,7 @@ export const HoleriteExtractor: DocumentExtractor = {
 
         // value = último; reference = penúltimo (coluna QTDE/REF)
         const value = moneys[moneys.length - 1] ?? ''
-        const reference = moneys.length > 1 ? moneys[moneys.length - 2] ?? '' : ''
+        const reference = moneys.length > 1 ? (moneys[moneys.length - 2] ?? '') : ''
 
         // label = texto entre code e reference, sem os valores monetários
         // e sem o traço "-" que representa referência vazia no documento

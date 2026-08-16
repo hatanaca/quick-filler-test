@@ -1,5 +1,6 @@
 import type { DayRecord } from '../value-objects/day-record.vo.js'
 import type { PageHolerite } from '../value-objects/page-holerite.vo.js'
+import { parseDateRaw } from '../../shared/utils/date-utils.js'
 
 export const CartaoPontoWarningType = {
   ODD_PUNCHES: 'odd-punches',
@@ -50,7 +51,9 @@ export const WarningCalculator = {
 
       if (types.length > 0) warnings.push({ index, types })
 
-      if (!day.date_raw.includes('?')) lastReadable = day
+      // Só datas legíveis viram âncora — impossíveis (38/07) e ilegíveis ('?')
+      // não podem envenenar a comparação das próximas datas.
+      if (parseDateRaw(day.date_raw).status === 'readable') lastReadable = day
     })
 
     return warnings
@@ -64,12 +67,14 @@ export const WarningCalculator = {
       const types: HoleriteWarningType[] = []
       if (page.isEmpty()) types.push(HoleriteWarningType.EMPTY_PAGE)
 
-      const competenceReadable =
-        !page.month.includes('?') && !page.year.includes('?')
+      const competenceReadable = !page.month.includes('?') && !page.year.includes('?')
       if (competenceReadable) {
         const year = Number(page.year)
         const month = Number(page.month)
-        if (lastReadable !== null && !isNextMonth(lastReadable.year, lastReadable.month, year, month)) {
+        if (
+          lastReadable !== null &&
+          !isNextMonth(lastReadable.year, lastReadable.month, year, month)
+        ) {
           types.push(HoleriteWarningType.NON_SEQUENTIAL_MONTH)
         }
         lastReadable = { year, month }

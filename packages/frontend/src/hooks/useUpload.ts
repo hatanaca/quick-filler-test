@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createTranscription } from '../api/client'
 
 export interface UploadState {
   arquivo: File | null
@@ -16,18 +17,15 @@ export function useUpload() {
       setErro('selecione um arquivo PDF')
       return
     }
+    // guard contra duplo clique: o estado enviando só é aplicado no próximo
+    // render, então um segundo clique podia disparar POST duplicado
+    if (enviando) return
     setEnviando(true)
     setErro(null)
     try {
-      const form = new FormData()
-      form.append('arquivo', arquivo)
-      form.append('tipo', tipo)
-      const response = await fetch('/api/transcricoes', { method: 'POST', body: form })
-      const body = (await response.json()) as { id?: string; erro?: string }
-      if (!response.ok || !body.id) {
-        throw new Error(body.erro ?? `erro ${response.status}`)
-      }
-      onSuccess(body.id, arquivo)
+      // usa o client central (VITE_API_URL), não '/api/transcricoes' fixo
+      const { id } = await createTranscription(arquivo, tipo)
+      onSuccess(id, arquivo)
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'falha no envio')
     } finally {

@@ -18,6 +18,14 @@ export class InMemoryEventBus implements EventBus {
   }
 
   publish(event: DomainEvent): void {
-    for (const handler of this.handlers) handler(event)
+    for (const handler of this.handlers) {
+      try {
+        handler(event)
+      } catch (error) {
+        // Um handler que lança não pode interromper os demais nem derrubar o
+        // publish — o agregado já foi persistido neste ponto.
+        console.error('[event-bus] handler falhou ao processar', event.type, error)
+      }
+    }
   }
 }

@@ -4,7 +4,7 @@ import { PayrollField } from '../../value-objects/payroll-field.vo.js'
 import { SIGNED_MONEY_RE, stripSign } from './money.js'
 
 /** Competência: "referência 09/2010 MENSAL" (OCR tolerante a ruído). */
-const RECIBO_COMPETENCIA_RE = /[^\d]*(\d{1,2})\/(\d{4})\s+MENSAL/i
+const RECIBO_COMPETENCIA_RE = /\D*(\d{1,2})\/(\d{4})\s+MENSAL/i
 
 /** Rótulos de base/total → nome canônico. */
 const RECIBO_BASES: [RegExp, string][] = [

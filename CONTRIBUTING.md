@@ -15,7 +15,9 @@
    ```bash
    npm run lint
    npm run typecheck
-   npm test
+   npm test              # unit + integration
+   npm run test:frontend # componentes React
+   npm run test:e2e      # Playwright (precisa do servidor rodando)
    ```
 4. Abra um Pull Request usando o template
 
@@ -69,7 +71,9 @@ chore(deps): bump fastify to 5.x
    ```bash
    npm run lint
    npm run typecheck
-   npm test
+   npm test              # unit + integration
+   npm run test:frontend # React components
+   npm run test:e2e      # Playwright (requires running server)
    ```
 4. Open a Pull Request using the template
 

@@ -29,7 +29,10 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:domain": "vitest run tests/unit/domain",
+    "test:frontend": "vitest run --workspace=@quickfiller/frontend",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "samples": "tsx scripts/generate-samples.ts",
     "test-pdfs": "tsx scripts/generate-test-pdfs.ts"
   },

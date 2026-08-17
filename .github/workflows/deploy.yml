@@ -1,0 +1,107 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: ci
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          APP_DIR: /opt/quick-filler-test
+        run: |
+          SSH_CMD="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$DEPLOY_HOST"
+
+          echo "📤 Syncing files to server..."
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            --exclude 'node_modules' \
+            --exclude '.git' \
+            --exclude 'uploads' \
+            --exclude 'coverage' \
+            --exclude 'output' \
+            --exclude '.env' \
+            . "$SSH_USER@$DEPLOY_HOST:$APP_DIR"
+
+          echo "🔧 Deploying on server..."
+          $SSH_CMD << 'DEPLOY_SCRIPT'
+            cd /opt/quick-filler-test
+            
+            # Generate JWT_SECRET if not exists
+            if [ ! -f .env ] || ! grep -q "JWT_SECRET=" .env; then
+              echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
+              echo "✅ JWT_SECRET generated"
+            fi
+            
+            # Build and deploy
+            docker compose build
+            docker compose up -d
+            
+            # Wait for health check
+            echo "⏳ Waiting for backend health..."
+            for i in {1..30}; do
+              if docker compose exec backend wget -qO- http://127.0.0.1:3001/healthz > /dev/null 2>&1; then
+                echo "✅ Backend is healthy!"
+                break
+              fi
+              sleep 2
+            done
+            
+            # Show status
+            docker compose ps
+          DEPLOY_SCRIPT
+
+      - name: Verify deployment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          echo "🔍 Verifying deployment..."
+          sleep 10
+
+          # Check if services are responding
+          if curl -sf "http://${DEPLOY_HOST}:5173" > /dev/null 2>&1; then
+            echo "✅ Frontend is accessible"
+          else
+            echo "⚠️  Frontend check failed (may be behind gateway)"
+          fi
+
+          if curl -sf "http://${DEPLOY_HOST}:3001/healthz" > /dev/null 2>&1; then
+            echo "✅ Backend health check passed"
+          else
+            echo "⚠️  Backend health check failed"
+          fi
+
+      - name: Cleanup SSH
+        if: always()
+        run: rm -rf ~/.ssh/deploy_key

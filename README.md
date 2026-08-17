@@ -1,4 +1,5 @@
 # Quick Filler — Transcrição de Documentos Trabalhistas
+
 <!-- English version: see [README_EN.md](README_EN.md) -->
 
 Aplicação web para transcrição de **cartões de ponto** e **holerites** em PDF para planilhas estruturadas — com OCR para documentos escaneados, revisão editável e download em xlsx/csv/json. Desafio técnico da [Quick Filler](https://github.com/quick-filler/desafio-programador).
@@ -11,16 +12,16 @@ Aplicação web para transcrição de **cartões de ponto** e **holerites** em P
 
 ## Stack
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Backend | Node.js 22+ · TypeScript · Fastify |
-| Frontend | React 18 · Vite · react-pdf |
-| OCR | Tesseract.js (local, sem nuvem) |
-| PDF | pdfjs-dist |
-| Planilhas | ExcelJS (xlsx) · csv (nativo) · JSON |
-| Testes | Vitest (TDD: domain e application primeiro) |
-| Qualidade | ESLint · Prettier · TypeScript strict |
-| Container | Docker + docker-compose |
+| Camada    | Tecnologia                                  |
+| --------- | ------------------------------------------- |
+| Backend   | Node.js 22+ · TypeScript · Fastify          |
+| Frontend  | React 18 · Vite · react-pdf                 |
+| OCR       | Tesseract.js (local, sem nuvem)             |
+| PDF       | pdfjs-dist                                  |
+| Planilhas | ExcelJS (xlsx) · csv (nativo) · JSON        |
+| Testes    | Vitest (TDD: domain e application primeiro) |
+| Qualidade | ESLint · Prettier · TypeScript strict       |
+| Container | Docker + docker-compose                     |
 
 ## Arquitetura
 
@@ -74,13 +75,13 @@ docker compose up --build
 
 Contrato literal do desafio (obrigatório e inalterável):
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/transcricoes` | Upload `multipart/form-data` (`arquivo` + `tipo`) → `202 { id }` |
-| GET | `/api/transcricoes/:id` | Status (`processando`/`concluido`/`erro`) + `value` |
-| PUT | `/api/transcricoes/:id` | Substitui `value` com as correções da interface |
-| GET | `/api/transcricoes/:id/planilha?formato=xlsx\|csv\|json` | Download com correções |
-| GET | `/healthz` | Health check |
+| Método | Rota                                                     | Descrição                                                        |
+| ------ | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| POST   | `/api/transcricoes`                                      | Upload `multipart/form-data` (`arquivo` + `tipo`) → `202 { id }` |
+| GET    | `/api/transcricoes/:id`                                  | Status (`processando`/`concluido`/`erro`) + `value`              |
+| PUT    | `/api/transcricoes/:id`                                  | Substitui `value` com as correções da interface                  |
+| GET    | `/api/transcricoes/:id/planilha?formato=xlsx\|csv\|json` | Download com correções                                           |
+| GET    | `/healthz`                                               | Health check                                                     |
 
 Detalhes e exemplos em [docs/API.md](docs/API.md).
 
@@ -98,9 +99,11 @@ Detalhes em [docs/SECURITY.md](docs/SECURITY.md).
 ## Testes
 
 ```bash
-npm test                 # todos
+npm test                 # todos (unit + integration)
 npm run test:unit        # domain + application (TDD, sem mocks no domain)
+npm run test:frontend    # componentes React (Vitest + Testing Library)
 npm run test:integration # rotas HTTP + pipeline E2E com PDFs reais
+npm run test:e2e         # testes end-to-end com Playwright
 npm run test:coverage    # domain >= 90%, application >= 80%
 ```
 

@@ -1,4 +1,4 @@
-.PHONY: setup install dev build test test-unit test-integration lint typecheck format format-check docker-up docker-down clean
+.PHONY: setup install dev build test test-unit test-integration test-frontend test-e2e lint typecheck format format-check docker-up docker-down clean
 
 # Setup inicial
 setup:
@@ -24,6 +24,12 @@ test-unit:
 
 test-integration:
 	npm run test:integration
+
+test-frontend:
+	npm run test:frontend
+
+test-e2e:
+	npm run test:e2e
 
 lint:
 	npm run lint

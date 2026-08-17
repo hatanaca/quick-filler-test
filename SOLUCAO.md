@@ -94,7 +94,7 @@ descobre a conclusão por polling em `GET /api/transcricoes/:id`.
   vermelha (para carimbos), grayscale, contraste 1-99%, binarização
   adaptativa de Sauvola, correção de deskew por projeção.
 - **Incerteza por caractere**: símbolos com confiança abaixo do limiar
-  (`OCR_CONFIDENCE_THRESHOLD`, padrão 40) são substituídos por `?`.
+  (`OCR_CONFIDENCE_THRESHOLD`, padrão 60) são substituídos por `?`.
 - **PSM configurável** (`OCR_PSM`, padrão 6 — bloco uniforme, bom para tabelas).
 - Limitação conhecida: tinta vermelha desbotada e dot-matrix (ex.:
   `time-card-04.pdf`) é ilegível pelo Tesseract local — sai honestamente

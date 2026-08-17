@@ -1,4 +1,5 @@
-import type { PageHolerite } from '../value-objects/page-holerite.vo.js'
+import { normalizeText } from '../../shared/utils/text-utils.js'
+import { PageHolerite } from '../value-objects/page-holerite.vo.js'
 import type { HoleriteResult } from '../value-objects/transcription-result.vo.js'
 import type { DocumentExtractor } from './extractor-registry.js'
 import { parseStandard } from './holerite/standard.js'
@@ -9,16 +10,8 @@ import { parseReciboPagamento } from './holerite/recibo-pagamento.js'
 
 type LayoutParser = (text: string, pageIndex: number) => PageHolerite[]
 
-function normalize(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '')
-    .toLowerCase()
-}
-
 function detectLayout(text: string): LayoutParser {
-  const n = normalize(text)
+  const n = normalizeText(text)
   // A ficha financeira só traz o cabeçalho "FICHAFINANCEIRA" na 1ª página —
   // páginas seguintes são reconhecidas pelos rótulos/totais característicos.
   if (
@@ -53,7 +46,46 @@ function detectLayout(text: string): LayoutParser {
  */
 export const HoleriteExtractor: DocumentExtractor = {
   extract(pagesText: string[]): HoleriteResult {
-    const pages = pagesText.flatMap((text, index) => detectLayout(text)(text, index))
-    return { pages }
+    const raw = pagesText.flatMap((text, index) => detectLayout(text)(text, index))
+    return { pages: mergeDuplicateEntries(raw) }
   },
+}
+
+/**
+ * Mescla entradas com o mesmo page+month+year quando seus campos se
+ * sobrepõem (mesmo label). PDFs com seções de continuação (ex.:
+ * rendimentos na metade superior, descontos/resultados na inferior)
+ * geram duas entradas para o mesmo mês com campos complementares.
+ * Seções legítimas (MÊS vs ACERTO na Declaração Remuneração) não
+ * compartilham labels e ficam separadas.
+ */
+function mergeDuplicateEntries(pages: PageHolerite[]): PageHolerite[] {
+  const merged: PageHolerite[] = []
+  const seen = new Map<string, number>()
+
+  for (const page of pages) {
+    const key = `${page.page}|${page.month}|${page.year}`
+    const existingIndex = seen.get(key)
+    if (existingIndex !== undefined) {
+      const existing = merged[existingIndex]!
+      const existingLabels = new Set(existing.fields.map((f) => f.label))
+      const hasOverlap = page.fields.some((f) => existingLabels.has(f.label))
+
+      if (hasOverlap) {
+        merged[existingIndex] = PageHolerite.from({
+          page: existing.page,
+          year: existing.year,
+          month: existing.month,
+          fields: [...existing.fields, ...page.fields],
+          bases: [...existing.bases, ...page.bases],
+        })
+        continue
+      }
+    }
+
+    seen.set(key, merged.length)
+    merged.push(page)
+  }
+
+  return merged
 }

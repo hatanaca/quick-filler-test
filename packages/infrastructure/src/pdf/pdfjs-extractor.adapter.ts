@@ -26,7 +26,7 @@ const COLUMN_GAP_THRESHOLD = 8
  *   A4 a scale=2 ≈ 144 DPI (abaixo do recomendado de 300); scale=4 ≈ 288 DPI.
  */
 export class PdfJsExtractorAdapter implements PdfExtractorPort {
-  constructor(private readonly renderScale = 4) {}
+  constructor(private readonly renderScale = 5) {}
   async extractPages(buffer: Buffer): Promise<string[]> {
     const task = getDocument({ data: new Uint8Array(buffer) })
     try {

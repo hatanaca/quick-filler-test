@@ -1,23 +1,5 @@
 [
   {
-    "Data": "09/03/2026",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
-    "Data": "16/12/2019",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
     "Data": "16/12/2019",
     "Entrada 1": "07:00",
     "Saída 1": "12:00",
@@ -464,7 +446,7 @@
     "Saída 1": "11:00",
     "Entrada 2": "12:00",
     "Saída 2": "15:12",
-    "Entrada 3": null,
+    "Entrada 3": "00:16",
     "Saída 3": null
   },
   {
@@ -482,8 +464,8 @@
     "Saída 1": "19:00",
     "Entrada 2": "20:00",
     "Saída 2": "23:20",
-    "Entrada 3": "01:20",
-    "Saída 3": null
+    "Entrada 3": "00:25",
+    "Saída 3": "01:20"
   },
   {
     "Data": "06/02/2020",
@@ -522,24 +504,6 @@
     "Saída 3": null
   },
   {
-    "Data": "09/03/2026",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
-    "Data": "16/12/2019",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
     "Data": "10/02/2020",
     "Entrada 1": "06:57",
     "Saída 1": "11:00",
@@ -568,11 +532,11 @@
   },
   {
     "Data": "13/02/2020",
-    "Entrada 1": "19:00",
-    "Saída 1": "20:00",
-    "Entrada 2": "23:00",
-    "Saída 2": "01:00",
-    "Entrada 3": null,
+    "Entrada 1": "15:00",
+    "Saída 1": "19:00",
+    "Entrada 2": "20:00",
+    "Saída 2": "23:00",
+    "Entrada 3": "01:00",
     "Saída 3": null
   },
   {
@@ -689,7 +653,7 @@
     "Saída 1": "11:00",
     "Entrada 2": "12:00",
     "Saída 2": "15:11",
-    "Entrada 3": null,
+    "Entrada 3": "00:16",
     "Saída 3": null
   },
   {
@@ -716,8 +680,8 @@
     "Saída 1": "19:00",
     "Entrada 2": "20:00",
     "Saída 2": "23:11",
-    "Entrada 3": null,
-    "Saída 3": null
+    "Entrada 3": "00:15",
+    "Saída 3": "01:11"
   },
   {
     "Data": "01/03/2020",
@@ -788,8 +752,8 @@
     "Saída 1": "19:00",
     "Entrada 2": "20:00",
     "Saída 2": "23:21",
-    "Entrada 3": "01:21",
-    "Saída 3": null
+    "Entrada 3": "00:26",
+    "Saída 3": "01:21"
   },
   {
     "Data": "09/03/2020",
@@ -896,7 +860,7 @@
     "Saída 1": "19:00",
     "Entrada 2": "20:00",
     "Saída 2": "23:01",
-    "Entrada 3": null,
+    "Entrada 3": "01:01",
     "Saída 3": null
   },
   {
@@ -1036,24 +1000,6 @@
   },
   {
     "Data": "05/04/2020",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
-    "Data": "09/03/2026",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
-    "Data": "16/12/2019",
     "Entrada 1": null,
     "Saída 1": null,
     "Entrada 2": null,
@@ -1566,24 +1512,6 @@
     "Saída 3": null
   },
   {
-    "Data": "09/03/2026",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
-    "Data": "16/12/2019",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
     "Data": "01/06/2020",
     "Entrada 1": "07:00",
     "Saída 1": "11:00",
@@ -2088,24 +2016,6 @@
     "Saída 3": null
   },
   {
-    "Data": "09/03/2026",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
-    "Data": "16/12/2019",
-    "Entrada 1": null,
-    "Saída 1": null,
-    "Entrada 2": null,
-    "Saída 2": null,
-    "Entrada 3": null,
-    "Saída 3": null
-  },
-  {
     "Data": "27/07/2020",
     "Entrada 1": "06:56",
     "Saída 1": "11:00",
@@ -2197,11 +2107,11 @@
   },
   {
     "Data": "06/08/2020",
-    "Entrada 1": "19:00",
-    "Saída 1": "20:00",
-    "Entrada 2": "23:00",
-    "Saída 2": "01:00",
-    "Entrada 3": null,
+    "Entrada 1": "15:00",
+    "Saída 1": "19:00",
+    "Entrada 2": "20:00",
+    "Saída 2": "23:00",
+    "Entrada 3": "01:00",
     "Saída 3": null
   },
   {
@@ -2579,7 +2489,7 @@
     "Saída 1": "19:00",
     "Entrada 2": "20:00",
     "Saída 2": "22:59",
-    "Entrada 3": "00:59",
+    "Entrada 3": null,
     "Saída 3": null
   },
   {

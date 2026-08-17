@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-08-17
+
+### Fixed
+
+- **Domínio**: `CartaoPontoExtractor` — datas de cabeçalho/rodapé que aparecem
+  em múltiplas páginas sem batidas (ex.: data de emissão do relatório) agora
+  são filtradas automaticamente. Antes, `time-card-03.json` tinha entradas
+  fantasmas como "09/03/2026" e "16/12/2019" repetidas em cada página.
+- **Domínio**: `HoleriteExtractor` — entradas duplicadas do mesmo mês/página
+  na Ficha Financeira agora são mescladas quando seus campos se sobrepõem.
+  Antes, `payroll-01.json` tinha linhas duplicadas para meses com seções de
+  continuação (ex.: mês 10 e 12 de 2017).
+
+### Changed
+
+- **OCR**: `PDF_RENDER_SCALE` padrão alterado de 4 para 5 (~288 DPI → ~360 DPI)
+  — mais próximo do recomendado de 300 DPI para Tesseract.
+- **OCR**: `OCR_CONFIDENCE_THRESHOLD` padrão alterado de 40 para 60 — mais
+  restritivo, reduz falsos positivos em documentos escaneados.
+
 ## [1.2.0] - 2026-08-16
 
 ### Fixed

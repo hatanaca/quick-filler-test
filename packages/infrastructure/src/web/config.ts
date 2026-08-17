@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto'
+
 export interface AppConfig {
   nodeEnv: 'development' | 'production' | 'test'
   port: number
@@ -45,7 +47,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       ? (() => {
           throw new Error('JWT_SECRET environment variable is required in production')
         })()
-      : 'dev-secret-' + Math.random().toString(36).slice(2))
+      : 'dev-secret-' + randomBytes(24).toString('hex'))
 
   return {
     nodeEnv: (env.NODE_ENV as AppConfig['nodeEnv']) ?? 'development',
@@ -60,8 +62,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     rateLimitWindowMs: positiveFromEnv(env, 'RATE_LIMIT_WINDOW_MS', 60_000),
     tesseractLang: env.TESSERACT_LANG ?? 'por',
     ocrWorkerPoolSize: positiveFromEnv(env, 'OCR_WORKER_POOL_SIZE', 2),
-    pdfRenderScale: positiveFromEnv(env, 'PDF_RENDER_SCALE', 4),
-    ocrConfidenceThreshold: positiveFromEnv(env, 'OCR_CONFIDENCE_THRESHOLD', 40),
+    pdfRenderScale: positiveFromEnv(env, 'PDF_RENDER_SCALE', 5),
+    ocrConfidenceThreshold: positiveFromEnv(env, 'OCR_CONFIDENCE_THRESHOLD', 60),
     ocrPreprocess: (env.OCR_PREPROCESS as AppConfig['ocrPreprocess']) ?? 'auto',
     ocrPsm: positiveFromEnv(env, 'OCR_PSM', 6),
     ocrWhitelist: env.OCR_WHITELIST ?? '',

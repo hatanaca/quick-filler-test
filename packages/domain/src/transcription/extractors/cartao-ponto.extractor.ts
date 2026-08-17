@@ -1,3 +1,4 @@
+import { normalizeText, twoDigits } from '../../shared/utils/text-utils.js'
 import { DayRecord } from '../value-objects/day-record.vo.js'
 import { PageCartaoPonto } from '../value-objects/page-cartao-ponto.vo.js'
 import { Punch } from '../value-objects/punch.vo.js'
@@ -15,10 +16,6 @@ function normalizeTime(raw: string): string {
   const [hour, minute] = raw.split(':')
   if (!hour || !minute) return raw
   return `${hour.padStart(2, '0')}:${minute}`
-}
-
-function twoDigits(value: number): string {
-  return String(value).padStart(2, '0')
 }
 
 const SIPON_MES_ANO_RE = /Mes\/Ano\s*:\s*(\d{1,2})\s*\/\s*(\d{4})/
@@ -61,23 +58,46 @@ function normalizeRangeTime(raw: string): string {
 export const CartaoPontoExtractor: DocumentExtractor = {
   extract(pagesText: string[]): CartaoPontoResult {
     const pages = pagesText.map((text, index) => {
-      const n = normalize(text)
+      const n = normalizeText(text)
       if (n.includes('bancodobrasil') || n.includes('relatoriomensal')) {
         return extractBancoDoBrasilPage(text, index)
       }
       if (isSipon(text)) return extractSiponPage(text, index)
       return extractStandardPage(text, index)
     })
-    return { pages }
+    return { pages: removeRepeatedHeaderDates(pages) }
   },
 }
 
-function normalize(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '')
-    .toLowerCase()
+/**
+ * Remove datas de cabeçalho/rodapé que aparecem em múltiplas páginas sem
+ * batidas. PDFs reais frequentemente trazem a data de emissão ou referência
+ * no topo/rodapé de cada página — sem esse filtro, essas datas viram linhas
+ * fantasmas repetidas na saída.
+ */
+function removeRepeatedHeaderDates(pages: PageCartaoPonto[]): PageCartaoPonto[] {
+  if (pages.length <= 1) return pages
+
+  const noPunchCount = new Map<string, number>()
+  for (const page of pages) {
+    for (const day of page.days) {
+      if (day.punches.length === 0) {
+        noPunchCount.set(day.date_raw, (noPunchCount.get(day.date_raw) ?? 0) + 1)
+      }
+    }
+  }
+
+  const toRemove = new Set(
+    [...noPunchCount.entries()].filter(([, count]) => count >= 3).map(([d]) => d),
+  )
+
+  return pages.map((page) => ({
+    ...page,
+    days: page.days.filter((day) => {
+      if (day.punches.length > 0) return true
+      return !toRemove.has(day.date_raw)
+    }),
+  }))
 }
 
 function isSipon(pageText: string): boolean {

@@ -229,7 +229,7 @@ describe('API HTTP — contrato do desafio', () => {
     })
     const { id } = post.json()
     // o processamento roda dentro do POST (slot da fila) — aguarda concluir
-    await waitForDone(app, id)
+    await waitForDone(app, id, 5_000, authHeaders)
 
     const novoValue = {
       pages: [
@@ -271,7 +271,7 @@ describe('API HTTP — contrato do desafio', () => {
       headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     const { id } = post.json()
-    await waitForDone(app, id)
+    await waitForDone(app, id, 5_000, authHeaders)
 
     const res = await app.inject({
       method: 'PUT',
@@ -304,7 +304,7 @@ describe('API HTTP — contrato do desafio', () => {
       headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     const { id } = post.json()
-    await waitForDone(app, id)
+    await waitForDone(app, id, 5_000, authHeaders)
 
     const res = await app.inject({
       method: 'GET',

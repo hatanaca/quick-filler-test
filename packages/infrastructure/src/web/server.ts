@@ -4,6 +4,7 @@ import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import compress from '@fastify/compress'
 import multipart from '@fastify/multipart'
+import cookie from '@fastify/cookie'
 import type {
   CreateTranscriptionUseCase,
   ExportSpreadsheetUseCase,
@@ -15,7 +16,9 @@ import type { AppConfig } from './config.js'
 import { createLoggerOptions } from './middleware/logger.js'
 import { errorHandler } from './middleware/error-handler.js'
 import { ProcessingQueue } from './middleware/queue.js'
+import { registerJwt } from './middleware/auth.js'
 import { registerHealthz } from './routes/healthz.route.js'
+import { registerAuthRoutes } from './routes/auth.route.js'
 import { registerTranscriptionRoutes } from './routes/transcricoes.route.js'
 
 export interface AppDeps {
@@ -44,19 +47,56 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   } as Parameters<typeof Fastify>[0]) as unknown as FastifyInstance
 
   app.register(multipart, { limits: { fileSize: deps.config.uploadMaxSizeBytes } })
-  app.register(helmet)
-  app.register(cors, { origin: deps.config.corsOrigin.split(',') })
+
+  // Register cookie plugin for refresh tokens
+  app.register(cookie)
+
+  // Configure Helmet with explicit CSP for security
+  app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Required for React/Vite dev
+        styleSrc: ["'self'", "'unsafe-inline'"], // Required for Tailwind
+        imgSrc: ["'self'", 'data:', 'blob:'], // Required for PDF rendering
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        connectSrc: ["'self'"], // API calls
+        workerSrc: ["'self'", 'blob:'], // Required for PDF.js worker
+        childSrc: ["'self'"],
+        formAction: ["'self'"],
+        upgradeInsecureRequests: deps.config.nodeEnv === 'production' ? [] : null,
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Required for PDF.js
+    crossOriginResourcePolicy: false, // Required for PDF.js
+  })
+
+  app.register(cors, {
+    origin: deps.config.corsOrigin.split(','),
+    credentials: true, // Allow cookies for refresh tokens
+  })
   app.register(rateLimit, {
     max: deps.config.rateLimitMax,
     timeWindow: deps.config.rateLimitWindowMs,
   })
   app.register(compress)
 
+  // Register JWT for authentication
+  registerJwt(app, deps.config.jwtSecret)
+
   app.setErrorHandler(errorHandler)
 
   const uploadQueue = new ProcessingQueue(deps.config.uploadMaxConcurrentPerIp, app.log)
 
   registerHealthz(app)
+
+  // Auth routes (login, refresh, logout - no auth required)
+  registerAuthRoutes(app)
+
+  // Protected transcription routes
   registerTranscriptionRoutes(app, {
     createTranscription: deps.createTranscription,
     getTranscription: deps.getTranscription,

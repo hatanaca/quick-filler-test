@@ -18,6 +18,7 @@ import {
   type OcrEnginePort,
   type SpreadsheetGeneratorPort,
 } from '@quickfiller/domain'
+import { getAuthHeaders } from '../helpers/auth'
 
 class FakeRepository implements TranscriptionRepository {
   items = new Map<string, Transcription>()
@@ -95,6 +96,7 @@ function multipart(
 describe('Segurança de upload', () => {
   let app: FastifyInstance
   let storage: FakeStorage
+  let authHeaders: { Authorization: string }
 
   const smallConfig = {
     nodeEnv: 'test',
@@ -115,6 +117,7 @@ describe('Segurança de upload', () => {
     ocrPreprocess: 'auto',
     ocrPsm: 6,
     ocrWhitelist: '',
+    jwtSecret: 'test-secret-key-for-testing-only',
   } as const
 
   beforeAll(async () => {
@@ -135,6 +138,7 @@ describe('Segurança de upload', () => {
       exportSpreadsheet: new ExportSpreadsheetUseCase(repo, new NoopGenerator()),
     })
     await app.ready()
+    authHeaders = await getAuthHeaders(app)
   })
 
   afterAll(async () => {
@@ -143,33 +147,58 @@ describe('Segurança de upload', () => {
 
   it('aceita PDF dentro do limite', async () => {
     const { payload, headers } = multipart(Buffer.from('%PDF-1.4 pequeno'), 'b1')
-    const res = await app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transcricoes',
+      payload,
+      headers: { ...headers, ...authHeaders },
+    })
     expect(res.statusCode).toBe(202)
   })
 
   it('rejeita PDF acima do limite com 4xx e mensagem', async () => {
     const big = Buffer.concat([Buffer.from('%PDF-1.4 '), Buffer.alloc(2048, 0x41)])
     const { payload, headers } = multipart(big, 'b2')
-    const res = await app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transcricoes',
+      payload,
+      headers: { ...headers, ...authHeaders },
+    })
     expect(res.statusCode).toBeGreaterThanOrEqual(400)
     expect(res.statusCode).toBeLessThan(500)
   })
 
   it('rejeita arquivo vazio', async () => {
     const { payload, headers } = multipart(Buffer.alloc(0), 'b3')
-    const res = await app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transcricoes',
+      payload,
+      headers: { ...headers, ...authHeaders },
+    })
     expect(res.statusCode).toBe(400)
   })
 
   it('arquivo com magic bytes %PDF mas conteúdo lixo passa na validação de tipo', async () => {
     const { payload, headers } = multipart(Buffer.from('%PDF-1.7 lixo'), 'b4')
-    const res = await app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transcricoes',
+      payload,
+      headers: { ...headers, ...authHeaders },
+    })
     expect(res.statusCode).toBe(202)
   })
 
   it('armazena com nome sanitizado (id, não nome original)', async () => {
     const { payload, headers } = multipart(Buffer.from('%PDF-1.4 sanitize'), 'b5')
-    const res = await app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/transcricoes',
+      payload,
+      headers: { ...headers, ...authHeaders },
+    })
     const { id } = res.json()
     expect(storage.files.has(id)).toBe(true)
     // nenhuma chave deve conter o nome original do arquivo (PII)
@@ -182,8 +211,18 @@ describe('Segurança de upload', () => {
   it('rejeita uploads simultâneos acima do limite por IP (429)', async () => {
     const { payload, headers } = multipart(Buffer.from('%PDF-1.4 concorrencia'), 'b6')
     const [a, b] = await Promise.all([
-      app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers }),
-      app.inject({ method: 'POST', url: '/api/transcricoes', payload, headers }),
+      app.inject({
+        method: 'POST',
+        url: '/api/transcricoes',
+        payload,
+        headers: { ...headers, ...authHeaders },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/transcricoes',
+        payload,
+        headers: { ...headers, ...authHeaders },
+      }),
     ])
     const codes = [a.statusCode, b.statusCode].sort()
     expect(codes[0]).toBe(202)
@@ -208,7 +247,7 @@ describe('Segurança de upload', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload,
-      headers: { 'content-type': 'multipart/form-data; boundary=dup' },
+      headers: { 'content-type': 'multipart/form-data; boundary=dup', ...authHeaders },
     })
     expect(res.statusCode).toBe(400)
   })

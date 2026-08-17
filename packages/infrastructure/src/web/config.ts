@@ -17,6 +17,7 @@ export interface AppConfig {
   ocrPreprocess: 'off' | 'auto' | 'color' | 'grayscale'
   ocrPsm: number
   ocrWhitelist: string
+  jwtSecret: string
 }
 
 function numberFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -35,6 +36,17 @@ function positiveFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number)
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const uploadMaxSizeMb = positiveFromEnv(env, 'UPLOAD_MAX_SIZE_MB', 20)
+
+  // Generate a random secret for development/test; in production, use a strong secret
+  const nodeEnv = (env.NODE_ENV as AppConfig['nodeEnv']) ?? 'development'
+  const jwtSecret =
+    env.JWT_SECRET ??
+    (nodeEnv === 'production'
+      ? (() => {
+          throw new Error('JWT_SECRET environment variable is required in production')
+        })()
+      : 'dev-secret-' + Math.random().toString(36).slice(2))
+
   return {
     nodeEnv: (env.NODE_ENV as AppConfig['nodeEnv']) ?? 'development',
     port: numberFromEnv(env, 'PORT', 3001),
@@ -60,5 +72,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean),
+    jwtSecret,
   }
 }

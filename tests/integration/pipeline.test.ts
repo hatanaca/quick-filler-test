@@ -14,6 +14,7 @@ import {
 import { InMemoryTranscriptionRepository, DiskFileStorage } from '@quickfiller/infrastructure'
 import { PdfJsExtractorAdapter, ExcelJsGeneratorAdapter } from '@quickfiller/infrastructure'
 import type { TranscriptionRepository, FileStoragePort, OcrEnginePort } from '@quickfiller/domain'
+import { getAuthHeaders } from '../helpers/auth'
 
 const FIXTURES = join(__dirname, '..', 'fixtures', 'pdfs')
 
@@ -42,6 +43,7 @@ const config = {
   ocrPreprocess: 'auto',
   ocrPsm: 6,
   ocrWhitelist: '',
+  jwtSecret: 'test-secret-key-for-testing-only',
 } as const
 
 function multipart(
@@ -66,10 +68,15 @@ async function waitForDone(
   app: FastifyInstance,
   id: string,
   timeoutMs = 10_000,
+  authHeaders?: { Authorization: string },
 ): Promise<{ status: string; value: unknown; erro: string | null }> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
-    const res = await app.inject({ method: 'GET', url: `/api/transcricoes/${id}` })
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/transcricoes/${id}`,
+      headers: authHeaders,
+    })
     const body = res.json()
     if (body.status !== 'processando') return body
     await new Promise((r) => setTimeout(r, 200))
@@ -81,6 +88,7 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
   let app: FastifyInstance
   let repo: TranscriptionRepository
   let storage: FileStoragePort
+  let authHeaders: { Authorization: string }
 
   beforeAll(async () => {
     repo = new InMemoryTranscriptionRepository()
@@ -101,6 +109,7 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
       exportSpreadsheet: new ExportSpreadsheetUseCase(repo, new ExcelJsGeneratorAdapter()),
     })
     await app.ready()
+    authHeaders = await getAuthHeaders(app)
   })
 
   afterAll(async () => {
@@ -109,15 +118,17 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
 
   it('cartão de ponto: enviar → processar → revisar → baixar (ciclo completo)', async () => {
     const pdf = await readFile(join(FIXTURES, 'cartao-ponto-teste.pdf'))
+    const mp = multipart(pdf, 'cartao-ponto', 'e2e1')
     const post = await app.inject({
       method: 'POST',
       url: '/api/transcricoes',
-      ...multipart(pdf, 'cartao-ponto', 'e2e1'),
+      payload: mp.payload,
+      headers: { ...mp.headers, ...authHeaders },
     })
     expect(post.statusCode).toBe(202)
     const { id } = post.json()
 
-    const done = await waitForDone(app, id)
+    const done = await waitForDone(app, id, 10_000, authHeaders)
     expect(done.status).toBe('concluido')
     expect(done.value).not.toBeNull()
 
@@ -137,6 +148,7 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
       const res = await app.inject({
         method: 'GET',
         url: `/api/transcricoes/${id}/planilha?formato=${formato}`,
+        headers: authHeaders,
       })
       expect(res.statusCode).toBe(200)
       expect(res.rawPayload.length).toBeGreaterThan(0)
@@ -145,14 +157,16 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
 
   it('holerite: separa fields (verbas) de bases (seção separada)', async () => {
     const pdf = await readFile(join(FIXTURES, 'holerite-teste.pdf'))
+    const mp = multipart(pdf, 'holerite', 'e2e2')
     const post = await app.inject({
       method: 'POST',
       url: '/api/transcricoes',
-      ...multipart(pdf, 'holerite', 'e2e2'),
+      payload: mp.payload,
+      headers: { ...mp.headers, ...authHeaders },
     })
     const { id } = post.json()
 
-    const done = await waitForDone(app, id)
+    const done = await waitForDone(app, id, 10_000, authHeaders)
     expect(done.status).toBe('concluido')
 
     const value = done.value as {
@@ -177,15 +191,17 @@ describe('Pipeline E2E — PDF real com texto embutido', () => {
 
   it('PDF corrompido (não-PDF com magic bytes falsos) → status ERRO legível', async () => {
     const fake = Buffer.from('%PDF-1.4 ' + 'lixo'.repeat(100))
+    const mp = multipart(fake, 'cartao-ponto', 'e2e3')
     const post = await app.inject({
       method: 'POST',
       url: '/api/transcricoes',
-      ...multipart(fake, 'cartao-ponto', 'e2e3'),
+      payload: mp.payload,
+      headers: { ...mp.headers, ...authHeaders },
     })
     expect(post.statusCode).toBe(202)
     const { id } = post.json()
 
-    const done = await waitForDone(app, id, 15_000)
+    const done = await waitForDone(app, id, 15_000, authHeaders)
     expect(done.status).toBe('erro')
     expect(done.erro).toBeTruthy()
     expect(done.value).toBeNull()

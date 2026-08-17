@@ -18,6 +18,7 @@ import {
   type OcrEnginePort,
   type SpreadsheetGeneratorPort,
 } from '@quickfiller/domain'
+import { getAuthHeaders } from '../helpers/auth'
 
 class FakeRepository implements TranscriptionRepository {
   items = new Map<string, Transcription>()
@@ -102,6 +103,7 @@ const config = {
   ocrPreprocess: 'auto',
   ocrPsm: 6,
   ocrWhitelist: '',
+  jwtSecret: 'test-secret-key-for-testing-only',
 } as const
 
 const PDF_BYTES = Buffer.from('%PDF-1.4 fake content')
@@ -113,6 +115,7 @@ describe('API HTTP — contrato do desafio', () => {
   let pdfExtractor: FakePdfExtractor
   let ocr: FakeOcr
   let generator: FakeGenerator
+  let authHeaders: { Authorization: string }
 
   beforeAll(async () => {
     repo = new FakeRepository()
@@ -131,6 +134,7 @@ describe('API HTTP — contrato do desafio', () => {
       exportSpreadsheet: new ExportSpreadsheetUseCase(repo, generator),
     })
     await app.ready()
+    authHeaders = await getAuthHeaders(app)
   })
 
   afterAll(async () => {
@@ -147,7 +151,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(PDF_BYTES, 'cartao-ponto'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     expect(res.statusCode).toBe(202)
     const body = res.json()
@@ -160,7 +164,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(undefined, 'cartao-ponto'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     expect(res.statusCode).toBe(400)
   })
@@ -170,7 +174,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(Buffer.from('isto não é um pdf'), 'cartao-ponto'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     expect(res.statusCode).toBe(400)
     expect(res.json().erro).toMatch(/PDF/)
@@ -181,7 +185,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(PDF_BYTES, 'invalido'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     expect(res.statusCode).toBe(400)
   })
@@ -191,11 +195,15 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(PDF_BYTES, 'holerite'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     const { id } = post.json()
 
-    const res = await app.inject({ method: 'GET', url: `/api/transcricoes/${id}` })
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/transcricoes/${id}`,
+      headers: authHeaders,
+    })
     expect(res.statusCode).toBe(200)
     const body = res.json()
     expect(body.id).toBe(id)
@@ -207,6 +215,7 @@ describe('API HTTP — contrato do desafio', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/transcricoes/11111111-1111-4111-8111-111111111111',
+      headers: authHeaders,
     })
     expect(res.statusCode).toBe(404)
   })
@@ -216,7 +225,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(PDF_BYTES, 'cartao-ponto'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     const { id } = post.json()
     // o processamento roda dentro do POST (slot da fila) — aguarda concluir
@@ -242,10 +251,15 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'PUT',
       url: `/api/transcricoes/${id}`,
       payload: { value: novoValue },
+      headers: authHeaders,
     })
     expect(res.statusCode).toBe(200)
 
-    const get = await app.inject({ method: 'GET', url: `/api/transcricoes/${id}` })
+    const get = await app.inject({
+      method: 'GET',
+      url: `/api/transcricoes/${id}`,
+      headers: authHeaders,
+    })
     expect(get.json().value.pages[0].days[0].date_raw).toBe('21/05/2019')
   })
 
@@ -254,7 +268,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(PDF_BYTES, 'holerite'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     const { id } = post.json()
     await waitForDone(app, id)
@@ -275,6 +289,7 @@ describe('API HTTP — contrato do desafio', () => {
           ],
         },
       },
+      headers: authHeaders,
     })
     expect(res.statusCode).toBe(400)
   })
@@ -286,7 +301,7 @@ describe('API HTTP — contrato do desafio', () => {
       method: 'POST',
       url: '/api/transcricoes',
       payload: createMultipart(PDF_BYTES, 'cartao-ponto'),
-      headers: { 'content-type': 'multipart/form-data; boundary=test' },
+      headers: { 'content-type': 'multipart/form-data; boundary=test', ...authHeaders },
     })
     const { id } = post.json()
     await waitForDone(app, id)
@@ -294,6 +309,7 @@ describe('API HTTP — contrato do desafio', () => {
     const res = await app.inject({
       method: 'GET',
       url: `/api/transcricoes/${id}/planilha?formato=xlsx`,
+      headers: authHeaders,
     })
     expect(res.statusCode).toBe(200)
     expect(res.headers['content-type']).toContain('spreadsheetml')
@@ -303,6 +319,7 @@ describe('API HTTP — contrato do desafio', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/transcricoes/x/planilha?formato=pdf',
+      headers: authHeaders,
     })
     expect(res.statusCode).toBe(400)
   })
@@ -311,6 +328,7 @@ describe('API HTTP — contrato do desafio', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/transcricoes/11111111-1111-4111-8111-111111111111/planilha?formato=xlsx',
+      headers: authHeaders,
     })
     expect(res.statusCode).toBe(404)
   })
@@ -340,10 +358,15 @@ async function waitForDone(
   app: FastifyInstance,
   id: string,
   timeoutMs = 5_000,
+  authHeaders?: { Authorization: string },
 ): Promise<{ status: string }> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
-    const res = await app.inject({ method: 'GET', url: `/api/transcricoes/${id}` })
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/transcricoes/${id}`,
+      headers: authHeaders,
+    })
     const body = res.json()
     if (body.status !== 'processando') return body
     await new Promise((r) => setTimeout(r, 25))

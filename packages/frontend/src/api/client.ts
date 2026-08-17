@@ -1,4 +1,5 @@
 import type { DocumentType, ExportFormat, Transcription } from '../types'
+import { authenticatedFetch, getAccessToken } from './auth'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
@@ -23,20 +24,28 @@ export async function createTranscription(
   const form = new FormData()
   form.append('arquivo', arquivo)
   form.append('tipo', tipo)
-  const response = await fetch(`${BASE_URL}/api/transcricoes`, {
+
+  const token = getAccessToken()
+  const headers: HeadersInit = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes`, {
     method: 'POST',
+    headers,
     body: form,
   })
   return handle<{ id: string }>(response)
 }
 
 export async function getTranscription(id: string): Promise<Transcription> {
-  const response = await fetch(`${BASE_URL}/api/transcricoes/${id}`)
+  const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes/${id}`)
   return handle<Transcription>(response)
 }
 
 export async function updateTranscription(id: string, value: unknown): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/transcricoes/${id}`, {
+  const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes/${id}`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ value }),
@@ -45,5 +54,6 @@ export async function updateTranscription(id: string, value: unknown): Promise<v
 }
 
 export function downloadSpreadsheetUrl(id: string, formato: ExportFormat): string {
-  return `${BASE_URL}/api/transcricoes/${id}/planilha?formato=${formato}`
+  const token = getAccessToken()
+  return `${BASE_URL}/api/transcricoes/${id}/planilha?formato=${formato}${token ? `&token=${token}` : ''}`
 }

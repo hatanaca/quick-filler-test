@@ -28,12 +28,12 @@ services:
       # 172.16.0.0/12 cobre as redes bridge padrão do Docker.
       TRUST_PROXY: loopback,172.16.0.0/12
       # JWT Secret (REQUIRED in production)
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET:-}
       # User credentials (REQUIRED in production)
-      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL is required}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
-      USER_EMAIL: ${USER_EMAIL:?USER_EMAIL is required}
-      USER_PASSWORD: ${USER_PASSWORD:?USER_PASSWORD is required}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      USER_EMAIL: ${USER_EMAIL:-}
+      USER_PASSWORD: ${USER_PASSWORD:-}
     volumes:
       - uploads:/app/uploads
     healthcheck:

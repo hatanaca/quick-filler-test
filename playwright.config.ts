@@ -21,7 +21,8 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: 'npm run dev',
+        command:
+          'npm run dev --workspace=@quickfiller/infrastructure & npm run dev --workspace=@quickfiller/frontend',
         url: 'http://localhost:5173',
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

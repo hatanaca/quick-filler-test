@@ -11,7 +11,7 @@
 ### 1. Conectar ao servidor
 
 ```bash
-ssh usuario@200.158.244.244
+ssh usuario@200.158.242.69
 ```
 
 ### 2. Clonar ou atualizar o repositório
@@ -39,13 +39,13 @@ nano .env
 
 ```bash
 # Usar IP público ou domínio
-DOMAIN=200.158.244.244
+DOMAIN=200.158.242.69
 
 # CORS deve usar HTTPS
-CORS_ORIGIN=https://200.158.244.244
+CORS_ORIGIN=https://200.158.242.69
 
 # API URL deve usar HTTPS
-VITE_API_URL=https://200.158.244.244/filler/api
+VITE_API_URL=https://200.158.242.69/filler/api
 
 # Gerar secret forte para JWT
 JWT_SECRET=$(openssl rand -base64 32)
@@ -54,7 +54,7 @@ JWT_SECRET=$(openssl rand -base64 32)
 ### 4. Inicializar certificados SSL (primeira vez)
 
 ```bash
-./scripts/init-letsencrypt.sh 200.158.244.244 admin@seudominio.com
+./scripts/init-letsencrypt.sh 200.158.242.69 admin@seudominio.com
 ```
 
 ### 5. Construir e iniciar os containers
@@ -74,14 +74,14 @@ docker compose ps
 docker compose logs -f backend
 
 # Testar health check
-curl -k https://200.158.244.244/healthz
+curl -k https://200.158.242.69/healthz
 ```
 
 ### 7. Verificar HTTPS
 
 ```bash
 # Testar SSL
-curl -I https://200.158.244.244
+curl -I https://200.158.242.69
 
 # Deve retornar:
 # HTTP/2 200

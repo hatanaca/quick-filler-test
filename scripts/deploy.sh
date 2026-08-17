@@ -4,7 +4,7 @@
 
 set -e
 
-SERVER=${1:-"root@200.158.244.244"}
+SERVER=${1:-"root@200.158.242.69"}
 APP_DIR="/opt/quick-filler-test"
 
 echo "🚀 Iniciando deploy para $SERVER"
@@ -53,7 +53,7 @@ EOF
 echo ""
 echo "✅ Deploy concluído!"
 echo ""
-echo "🌐 Acesse: https://200.158.244.244"
+echo "🌐 Acesse: https://200.158.242.69"
 echo ""
 echo "Credenciais de teste:"
 echo "  Admin: admin@quickfiller.com / admin123"

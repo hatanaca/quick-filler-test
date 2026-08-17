@@ -60,11 +60,14 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     REFRESH_TOKENS.add(refreshToken)
 
     // Set refresh token as httpOnly cookie
+    // secure: true only when using HTTPS (gateway terminates SSL)
+    const isSecure =
+      request.headers['x-forwarded-proto'] === 'https' || request.protocol === 'https'
     reply.setCookie('refreshToken', refreshToken, {
       path: '/api/auth',
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: isSecure,
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     })
 
@@ -120,11 +123,13 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     REFRESH_TOKENS.add(newTokens.refreshToken)
 
     // Set new refresh token as httpOnly cookie
+    const isSecure =
+      request.headers['x-forwarded-proto'] === 'https' || request.protocol === 'https'
     reply.setCookie('refreshToken', newTokens.refreshToken, {
       path: '/api/auth',
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: isSecure,
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     })
 

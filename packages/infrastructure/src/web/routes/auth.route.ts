@@ -92,10 +92,9 @@ setInterval(() => {
 }, CLEANUP_INTERVAL_MS)
 
 function setRefreshCookie(reply: FastifyReply, token: string, request: FastifyRequest): void {
-  const isSecure =
-    process.env.NODE_ENV === 'production' ||
-    request.headers['x-forwarded-proto'] === 'https' ||
-    request.protocol === 'https'
+  // Trust only request.protocol (set by Fastify based on trustProxy config)
+  // to prevent X-Forwarded-Proto spoofing when trustProxy is misconfigured
+  const isSecure = process.env.NODE_ENV === 'production' || request.protocol === 'https'
   reply.setCookie('refreshToken', token, {
     path: '/api/auth',
     httpOnly: true,
@@ -152,8 +151,9 @@ export function registerAuthRoutes(app: FastifyInstance): void {
    * Refresh access token using refresh token
    */
   app.post('/api/auth/refresh', async (request: FastifyRequest, reply: FastifyReply) => {
-    const refreshToken =
-      request.cookies?.refreshToken || (request.body as { refreshToken?: string })?.refreshToken
+    // Only accept refresh token from httpOnly cookie — never from request body.
+    // Accepting from body would bypass httpOnly protection and allow XSS exfiltration.
+    const refreshToken = request.cookies?.refreshToken
 
     if (!refreshToken) {
       throw new AuthenticationError('Refresh token não fornecido')

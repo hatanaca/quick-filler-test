@@ -50,7 +50,13 @@ export function createLoggerOptions(level = 'info') {
         return { statusCode: res.statusCode }
       },
       err(err: { type?: string; message?: string; stack?: string }) {
-        return { type: err.type ?? 'Error', message: redactPii(err.message), stack: err.stack }
+        // Redact stack traces in production to prevent leaking internal paths
+        const isProd = process.env.NODE_ENV === 'production'
+        return {
+          type: err.type ?? 'Error',
+          message: redactPii(err.message),
+          ...(isProd ? {} : { stack: err.stack }),
+        }
       },
     },
   }

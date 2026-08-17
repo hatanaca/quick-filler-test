@@ -78,10 +78,7 @@ export function LoginPage() {
           <div className="mt-6 p-4 bg-gray-50 rounded-md">
             <p className="text-sm text-gray-600 font-medium mb-2">Credenciais de teste:</p>
             <p className="text-xs text-gray-500">
-              <strong>Admin:</strong> admin@quickfiller.com / admin123
-            </p>
-            <p className="text-xs text-gray-500">
-              <strong>Usuário:</strong> user@quickfiller.com / user123
+              Veja o arquivo <code>.env.example</code> para as credenciais de desenvolvimento.
             </p>
           </div>
         )}

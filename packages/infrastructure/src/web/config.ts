@@ -50,6 +50,35 @@ const WEAK_JWT_SECRETS: ReadonlySet<string> = new Set([
 
 const MIN_JWT_SECRET_LENGTH = 32
 
+const ALLOWED_TRUST_PROXY_VALUES: ReadonlySet<string> = new Set([
+  'loopback',
+  'linklocal',
+  'uniquelocal',
+])
+
+function parseTrustProxy(raw: string): (string | number)[] {
+  return raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map((v) => {
+      // Allow CIDR notation (e.g., 172.16.0.0/12) and named groups
+      if (ALLOWED_TRUST_PROXY_VALUES.has(v)) return v
+      // Allow CIDR ranges (basic validation: contains / and valid octets)
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/.test(v)) return v
+      // Reject 'true' and other unsafe values to prevent IP spoofing
+      if (v === 'true') {
+        throw new Error(
+          'TRUST_PROXY=true is unsafe (allows IP spoofing). Use specific CIDRs or named groups (loopback, linklocal, uniquelocal).',
+        )
+      }
+      // Try as numeric (number of proxies)
+      const num = Number(v)
+      if (Number.isInteger(num) && num >= 0) return num
+      throw new Error(`Invalid TRUST_PROXY value: "${v}". Use CIDRs, named groups, or proxy count.`)
+    })
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const uploadMaxSizeMb = positiveFromEnv(env, 'UPLOAD_MAX_SIZE_MB', 20)
 
@@ -69,6 +98,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     if (rawSecret.length < MIN_JWT_SECRET_LENGTH) {
       throw new Error(
         `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters. Generate: openssl rand -base64 32`,
+      )
+    }
+    // Reject weak default passwords in production (M1)
+    const WEAK_PASSWORDS = new Set(['admin123', 'user123', 'password', 'changeme', '123456'])
+    if (WEAK_PASSWORDS.has(env.ADMIN_PASSWORD ?? '')) {
+      throw new Error(
+        'ADMIN_PASSWORD is a weak default. Generate a strong password: openssl rand -base64 24',
+      )
+    }
+    if (WEAK_PASSWORDS.has(env.USER_PASSWORD ?? '')) {
+      throw new Error(
+        'USER_PASSWORD is a weak default. Generate a strong password: openssl rand -base64 24',
       )
     }
   }
@@ -96,10 +137,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     // CIDRs separados por vírgula; default apenas loopback (anti-spoofing).
     // Em deploy atrás de nginx em rede Docker, incluir a sub-rede do proxy
     // (ex.: "loopback,172.16.0.0/12") para o rate limit/fila verem o IP real.
-    trustProxy: (env.TRUST_PROXY ?? 'loopback')
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean),
+    // Valores 'true' são rejeitados para prevenir spoofing de IP.
+    trustProxy: parseTrustProxy(env.TRUST_PROXY ?? 'loopback'),
     jwtSecret,
   }
 }

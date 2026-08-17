@@ -16,7 +16,6 @@ jobs:
   ci:
     name: CI
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
 
   deploy:
     name: Deploy to Production
@@ -26,27 +25,31 @@ jobs:
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p 6060 -H 200.158.242.69 >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          SSH_USER="ThiagoHatanaka"
-          DEPLOY_HOST="200.158.242.69"
-          SSH_PORT="6060"
           APP_DIR="/opt/quick-filler-test"
 
-          SSH_CMD="ssh -p $SSH_PORT -i ~/.ssh/deploy_key $SSH_USER@$DEPLOY_HOST"
+          SSH_CMD="ssh -p $SSH_PORT $SSH_USER@$DEPLOY_HOST"
 
-          echo "📤 Syncing files to server..."
+          echo "Syncing files to server..."
           rsync -avz --delete \
-            -e "ssh -p $SSH_PORT -i ~/.ssh/deploy_key" \
+            -e "ssh -p $SSH_PORT" \
             --exclude 'node_modules' \
             --exclude '.git' \
             --exclude 'uploads' \
@@ -55,14 +58,14 @@ jobs:
             --exclude '.env' \
             . "$SSH_USER@$DEPLOY_HOST:$APP_DIR"
 
-          echo "🔧 Deploying on server..."
+          echo "Deploying on server..."
           $SSH_CMD << 'DEPLOY_SCRIPT'
             cd /opt/quick-filler-test
             
             # Generate JWT_SECRET if not exists
             if [ ! -f .env ] || ! grep -q "JWT_SECRET=" .env; then
               echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
-              echo "✅ JWT_SECRET generated"
+              echo "JWT_SECRET generated"
             fi
             
             # Build and deploy
@@ -70,10 +73,10 @@ jobs:
             docker compose up -d
             
             # Wait for health check
-            echo "⏳ Waiting for backend health..."
+            echo "Waiting for backend health..."
             for i in {1..30}; do
               if docker compose exec backend wget -qO- http://127.0.0.1:3001/healthz > /dev/null 2>&1; then
-                echo "✅ Backend is healthy!"
+                echo "Backend is healthy!"
                 break
               fi
               sleep 2
@@ -84,17 +87,15 @@ jobs:
           DEPLOY_SCRIPT
 
       - name: Verify deployment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          echo "🔍 Verifying deployment..."
+          echo "Verifying deployment..."
           sleep 10
 
           # Check if services are responding (via gateway)
-          if curl -sf "https://200.158.242.69" > /dev/null 2>&1; then
-            echo "✅ Frontend is accessible via gateway"
+          if curl -sf "https://$DEPLOY_HOST" > /dev/null 2>&1; then
+            echo "Frontend is accessible via gateway"
           else
-            echo "⚠️  Frontend check failed (gateway may use different port)"
+            echo "Frontend check failed (gateway may use different port)"
           fi
-
-      - name: Cleanup SSH
-        if: always()
-        run: rm -rf ~/.ssh/deploy_key

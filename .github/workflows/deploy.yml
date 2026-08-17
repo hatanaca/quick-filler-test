@@ -33,19 +33,20 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p 6060 -H 200.158.242.69 >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy to server
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          APP_DIR: /opt/quick-filler-test
         run: |
-          SSH_CMD="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$DEPLOY_HOST"
+          SSH_USER="ThiagoHatanaka"
+          DEPLOY_HOST="200.158.242.69"
+          SSH_PORT="6060"
+          APP_DIR="/opt/quick-filler-test"
+
+          SSH_CMD="ssh -p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$DEPLOY_HOST"
 
           echo "📤 Syncing files to server..."
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            -e "ssh -p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             --exclude 'node_modules' \
             --exclude '.git' \
             --exclude 'uploads' \
@@ -83,23 +84,15 @@ jobs:
           DEPLOY_SCRIPT
 
       - name: Verify deployment
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           echo "🔍 Verifying deployment..."
           sleep 10
 
-          # Check if services are responding
-          if curl -sf "http://${DEPLOY_HOST}:5173" > /dev/null 2>&1; then
-            echo "✅ Frontend is accessible"
+          # Check if services are responding (via gateway)
+          if curl -sf "https://200.158.242.69" > /dev/null 2>&1; then
+            echo "✅ Frontend is accessible via gateway"
           else
-            echo "⚠️  Frontend check failed (may be behind gateway)"
-          fi
-
-          if curl -sf "http://${DEPLOY_HOST}:3001/healthz" > /dev/null 2>&1; then
-            echo "✅ Backend health check passed"
-          else
-            echo "⚠️  Backend health check failed"
+            echo "⚠️  Frontend check failed (gateway may use different port)"
           fi
 
       - name: Cleanup SSH

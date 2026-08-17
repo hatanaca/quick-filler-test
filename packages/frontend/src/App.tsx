@@ -1,81 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { updateTranscription } from './api/client'
-import type { Transcription } from './types'
+import { useCallback, useState } from 'react'
 import { Upload } from './components/Upload/Upload'
 import { ReviewTable } from './components/ReviewTable/ReviewTable'
 import { PdfViewer } from './components/PdfViewer/PdfViewer'
 import { DownloadButton } from './components/DownloadButton'
 import { useTranscricao } from './hooks/useTranscricao'
+import { useAutoSave } from './hooks/useAutoSave'
 import { useAuth } from './contexts/AuthContext'
 
 export default function App() {
   const { user, logout } = useAuth()
   const [id, setId] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
-  const queryClient = useQueryClient()
   const { transcricao, erro: fetchErro } = useTranscricao(id)
-  const [salvo, setSalvo] = useState(false)
-  const [saveErro, setSaveErro] = useState<string | null>(null)
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Serializa PUTs: dois saves debounced sobrepostos não podem chegar fora de
-  // ordem no servidor (payload antigo gravado por último revertia a edição).
-  const saveChain = useRef<Promise<void>>(Promise.resolve())
-  // Id do documento em exibição: um PUT do doc A que resolve após o upload do
-  // doc B não pode marcar "salvo ✓" para o B (glitch de estado global).
-  const currentIdRef = useRef<string | null>(null)
+  const { salvo, saveErro, handleChange, resetSave } = useAutoSave({ id })
 
-  // limpa o debounce pendente no unmount para não disparar PUT em estado morto
-  useEffect(
-    () => () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current)
+  const handleUploaded = useCallback(
+    (novoId: string, arquivo: File) => {
+      resetSave()
+      setId(novoId)
+      setPdfFile(arquivo)
     },
-    [],
-  )
-
-  const handleUploaded = useCallback((novoId: string, arquivo: File) => {
-    // troca de documento: aborta PUT pendente do documento anterior
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = null
-    currentIdRef.current = novoId
-    setId(novoId)
-    setPdfFile(arquivo)
-    setSalvo(false)
-    setSaveErro(null)
-  }, [])
-
-  const handleChange = useCallback(
-    (value: unknown) => {
-      if (!id || !transcricao) return
-      // debounce da persistência: salva 500ms após a última edição
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => {
-        saveChain.current = saveChain.current
-          .then(() => updateTranscription(id, value))
-          .then(() => {
-            // Se o usuário já trocou de documento, o PUT é do doc antigo —
-            // não mexe no indicador global de salvo do documento atual.
-            if (currentIdRef.current !== id) return
-            setSalvo(true)
-            setSaveErro(null)
-            // Atualiza o cache com o valor que enviamos — sem refetch, que
-            // sobrescreveria caracteres digitados depois do snapshot do PUT.
-            queryClient.setQueryData<Transcription>(['transcricao', id], (prev) =>
-              prev ? { ...prev, value: value as Transcription['value'] } : prev,
-            )
-          })
-          .catch((error: unknown) => {
-            if (currentIdRef.current !== id) return
-            setSalvo(false)
-            // erro de validação do servidor (400) não pode ser silencioso —
-            // o usuário precisa saber que a correção não foi persistida
-            setSaveErro(
-              error instanceof Error && error.message ? error.message : 'falha ao salvar correção',
-            )
-          })
-      }, 500)
-    },
-    [id, transcricao, queryClient],
+    [resetSave],
   )
 
   return (

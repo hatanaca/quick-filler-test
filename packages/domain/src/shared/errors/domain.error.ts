@@ -5,10 +5,10 @@ export class DomainError extends Error {
   }
 }
 
-export class InvalidDocumentError extends DomainError {
+export class AuthenticationError extends DomainError {
   constructor(message: string) {
     super(message)
-    this.name = 'InvalidDocumentError'
+    this.name = 'AuthenticationError'
   }
 }
 

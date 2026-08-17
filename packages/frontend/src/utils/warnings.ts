@@ -100,10 +100,14 @@ export function cartaoHeaders(maxPunches: number): string[] {
 }
 
 export function holeriteHeaders(pages: HoleritePage[]): string[] {
+  const seen = new Set<string>()
   const labels: string[] = []
   for (const page of pages) {
     for (const field of page.fields) {
-      if (!labels.includes(field.label)) labels.push(field.label)
+      if (!seen.has(field.label)) {
+        seen.add(field.label)
+        labels.push(field.label)
+      }
     }
   }
   return ['Pág.', 'Mês', 'Ano', ...labels]

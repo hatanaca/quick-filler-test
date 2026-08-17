@@ -1,3 +1,4 @@
+import { twoDigits } from '../../../shared/utils/text-utils.js'
 import { PageHolerite } from '../../value-objects/page-holerite.vo.js'
 import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
@@ -19,10 +20,6 @@ const TOTAL_ROWS = new Set(['TOT.RENDIMENTOS', 'TOTALDESCONTOS'])
 
 function isNumberCell(cell: string): boolean {
   return /^-?[\d.,]+$/.test(cell) && cell !== '-' && cell !== ''
-}
-
-function twoDigits(value: number): string {
-  return String(value).padStart(2, '0')
 }
 
 /**

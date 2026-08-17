@@ -40,10 +40,14 @@ export function ReviewTable({ transcricao, onChange }: ReviewTableProps) {
       return { headers: hs, rows: flat }
     }
     const flat = flattenHolerite(pages as HoleritePage[])
+    const seen = new Set<string>()
     const labels: string[] = []
     for (const row of flat) {
       for (const field of row.page.fields) {
-        if (!labels.includes(field.label)) labels.push(field.label)
+        if (!seen.has(field.label)) {
+          seen.add(field.label)
+          labels.push(field.label)
+        }
       }
     }
     return { headers: ['Pág.', 'Mês', 'Ano', ...labels], rows: flat }

@@ -74,15 +74,17 @@ export function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-md">
-          <p className="text-sm text-gray-600 font-medium mb-2">Credenciais de teste:</p>
-          <p className="text-xs text-gray-500">
-            <strong>Admin:</strong> admin@quickfiller.com / admin123
-          </p>
-          <p className="text-xs text-gray-500">
-            <strong>Usuário:</strong> user@quickfiller.com / user123
-          </p>
-        </div>
+        {import.meta.env.DEV && (
+          <div className="mt-6 p-4 bg-gray-50 rounded-md">
+            <p className="text-sm text-gray-600 font-medium mb-2">Credenciais de teste:</p>
+            <p className="text-xs text-gray-500">
+              <strong>Admin:</strong> admin@quickfiller.com / admin123
+            </p>
+            <p className="text-xs text-gray-500">
+              <strong>Usuário:</strong> user@quickfiller.com / user123
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -35,7 +35,9 @@ export class CreateTranscriptionUseCase {
     try {
       await this.repository.save(transcription)
     } catch (error) {
-      await this.storage.delete(id.value).catch(() => {})
+      await this.storage.delete(id.value).catch((e) => {
+        console.error('falha ao limpar arquivo órfão:', e)
+      })
       throw error
     }
 

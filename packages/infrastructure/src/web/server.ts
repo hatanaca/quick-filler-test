@@ -56,7 +56,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // Required for React/Vite dev
+        scriptSrc:
+          deps.config.nodeEnv === 'production' ? ["'self'"] : ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"], // Required for Tailwind
         imgSrc: ["'self'", 'data:', 'blob:'], // Required for PDF rendering
         fontSrc: ["'self'"],

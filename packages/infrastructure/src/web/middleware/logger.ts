@@ -1,5 +1,3 @@
-import { pino } from 'pino'
-
 const PII_PATTERNS: { label: string; regex: RegExp }[] = [
   // CPF (11 dígitos com pontuação)
   { label: '[CPF]', regex: /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g },
@@ -56,8 +54,4 @@ export function createLoggerOptions(level = 'info') {
       },
     },
   }
-}
-
-export function createLogger(level = 'info') {
-  return pino(createLoggerOptions(level))
 }

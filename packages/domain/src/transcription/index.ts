@@ -1,6 +1,5 @@
 export * from './entities/transcription.entity.js'
 export * from './services/warning-calculator.service.js'
-export * from './services/date-validator.service.js'
 export * from './extractors/extractor-registry.js'
 export * from './extractors/cartao-ponto.extractor.js'
 export * from './extractors/holerite.extractor.js'

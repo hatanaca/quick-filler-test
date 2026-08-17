@@ -1,9 +1,5 @@
 import type { FastifyBaseLogger } from 'fastify'
 
-export interface UploadValidator {
-  isValid(buffer: Buffer): boolean
-}
-
 /**
  * Fila de processamento em memória: mantém a contagem de uploads
  * simultâneos por IP (limite configurável) e processa transcrições

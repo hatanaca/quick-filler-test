@@ -1,13 +1,18 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { DomainError, TranscriptionNotFoundError } from '@quickfiller/domain'
+import { AuthenticationError, DomainError, TranscriptionNotFoundError } from '@quickfiller/domain'
 
 /**
  * Converte erros de domínio em respostas HTTP adequadas:
- * - DomainError genérico → 400 (entrada inválida)
+ * - AuthenticationError → 401
  * - TranscriptionNotFoundError → 404
+ * - DomainError genérico → 400 (entrada inválida)
  * - Erro inesperado → 500 com mensagem genérica (sem stack em produção)
  */
 export function errorHandler(error: unknown, request: FastifyRequest, reply: FastifyReply): void {
+  if (error instanceof AuthenticationError) {
+    reply.status(401).send({ erro: error.message })
+    return
+  }
   if (error instanceof TranscriptionNotFoundError) {
     reply.status(404).send({ erro: error.message })
     return

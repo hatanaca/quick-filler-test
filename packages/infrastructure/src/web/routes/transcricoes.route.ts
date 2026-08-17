@@ -127,9 +127,10 @@ export function registerTranscriptionRoutes(
     if (!body || typeof body !== 'object' || !('value' in body)) {
       throw new DomainError('body deve conter o campo "value"')
     }
-    const transcription = await deps.getTranscription.execute(TranscriptionId.from(id))
+    const transcriptionId = TranscriptionId.from(id)
+    const transcription = await deps.getTranscription.execute(transcriptionId)
     const value = parseResult(transcription.tipo as 'cartao-ponto' | 'holerite', body.value)
-    await deps.updateTranscription.execute({ id: TranscriptionId.from(id), value })
+    await deps.updateTranscription.execute({ id: transcriptionId, value })
     return { id }
   })
 

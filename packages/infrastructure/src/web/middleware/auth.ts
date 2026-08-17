@@ -36,26 +36,6 @@ export async function verifyToken(
 }
 
 /**
- * Require specific roles for the endpoint.
- */
-export function requireRole(...roles: Array<JWTPayload['role']>) {
-  return async function roleGuard(
-    this: FastifyInstance,
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
-    const user = request.user as JWTPayload | undefined
-    if (!user) {
-      return reply.status(401).send({ erro: 'Não autenticado' })
-    }
-
-    if (!roles.includes(user.role)) {
-      return reply.status(403).send({ erro: 'Acesso negado' })
-    }
-  }
-}
-
-/**
  * Generate access and refresh tokens for a user.
  */
 export function generateTokens(

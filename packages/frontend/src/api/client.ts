@@ -1,7 +1,6 @@
 import type { DocumentType, Transcription } from '../types'
 import { authenticatedFetch } from './auth'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? ''
+import { BASE_URL } from './config'
 
 async function handle<T>(response: Response): Promise<T> {
   if (!response.ok) {

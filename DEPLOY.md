@@ -1,17 +1,28 @@
 # Deploy para Produção - Quick Filler
 
+## Arquitetura de Deploy
+
+```
+Internet → 200.158.242.69:5170 (Gateway SSL)
+         → 192.168.15.83:5173 (nginx frontend)
+         → backend:3001 (API)
+```
+
+- **Gateway**: Escuta na porta 5170, termina SSL, redireciona para 192.168.15.83:5173
+- **nginx**: Frontend estático + proxy para API
+- **Backend**: API Fastify
+
 ## Pré-requisitos
 
 - Docker e Docker Compose instalados
-- Acesso ao servidor via SSH
-- Certificados Let's Encrypt (ou gerar novos)
+- Gateway configurado na porta 5170 → 192.168.15.83:5173
 
 ## Passos para Deploy
 
-### 1. Conectar ao servidor
+### 1. Conectar ao servidor (192.168.15.83)
 
 ```bash
-ssh usuario@200.158.242.69
+ssh usuario@192.168.15.83
 ```
 
 ### 2. Clonar ou atualizar o repositório
@@ -38,33 +49,27 @@ nano .env
 **Configurações importantes para produção:**
 
 ```bash
-# Usar IP público ou domínio
+# IP público (gateway)
 DOMAIN=200.158.242.69
 
-# CORS deve usar HTTPS
+# CORS deve usar HTTPS (via gateway)
 CORS_ORIGIN=https://200.158.242.69
 
-# API URL deve usar HTTPS
+# API URL deve usar HTTPS (via gateway)
 VITE_API_URL=https://200.158.242.69/filler/api
 
 # Gerar secret forte para JWT
 JWT_SECRET=$(openssl rand -base64 32)
 ```
 
-### 4. Inicializar certificados SSL (primeira vez)
-
-```bash
-./scripts/init-letsencrypt.sh 200.158.242.69 admin@seudominio.com
-```
-
-### 5. Construir e iniciar os containers
+### 4. Construir e iniciar os containers
 
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-### 6. Verificar status
+### 5. Verificar status
 
 ```bash
 # Verificar containers
@@ -73,19 +78,20 @@ docker compose ps
 # Verificar logs
 docker compose logs -f backend
 
-# Testar health check
+# Testar health check (localmente)
+curl http://localhost:5173/healthz
+
+# Testar via gateway
 curl -k https://200.158.242.69/healthz
 ```
 
-### 7. Verificar HTTPS
+### 6. Verificar porta 5173
 
 ```bash
-# Testar SSL
-curl -I https://200.158.242.69
-
-# Deve retornar:
-# HTTP/2 200
-# strict-transport-security: max-age=63072000; includeSubDomains
+# Verificar se nginx está escutando na porta 5173
+netstat -tlnp | grep 5173
+# ou
+ss -tlnp | grep 5173
 ```
 
 ## Comandos Úteis
@@ -103,9 +109,6 @@ docker compose logs -f
 
 # Reiniciar backend
 docker compose restart backend
-
-# Backup do banco (se usar banco externo)
-# docker compose exec backend <comando-backup>
 ```
 
 ## Credenciais de Teste
@@ -115,19 +118,25 @@ docker compose restart backend
 
 ## Troubleshooting
 
-### SSL não funciona
+### Gateway não acessível
 
-1. Verificar se as portas 80 e 443 estão abertas no firewall
-2. Verificar se o DNS aponta para o servidor
-3. Verificar logs do nginx: `docker compose logs frontend`
+1. Verificar se o gateway está escutando na porta 5170
+2. Verificar se o gateway está redirecionando para 192.168.15.83:5173
+3. Verificar firewall do servidor
 
 ### Backend não inicia
 
-1. Verificar se JWT_SECRET está definido
+1. Verificar se JWT_SECRET está definido no .env
 2. Verificar logs: `docker compose logs backend`
 3. Verificar se o volume uploads existe: `docker volume ls`
 
 ### CORS erro
 
 1. Verificar CORS_ORIGIN no .env (deve ser HTTPS)
-2. Verificar se o frontend está servindo na porta correta
+2. Verificar se o gateway está passando os headers corretos
+
+### Porta 5173 não está acessível
+
+1. Verificar se o container frontend está rodando
+2. Verificar se o mapeamento de porta está correto: `docker compose ps`
+3. Verificar se o gateway está configurado corretamente

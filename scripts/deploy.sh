@@ -1,13 +1,19 @@
 #!/bin/bash
 # Deploy script for Quick Filler to production server
 # Usage: ./scripts/deploy.sh [user@host]
+#
+# Architecture:
+#   Internet → 200.158.242.69:5170 (Gateway SSL)
+#            → 192.168.15.83:5173 (nginx frontend)
+#            → backend:3001 (API)
 
 set -e
 
-SERVER=${1:-"root@200.158.242.69"}
+SERVER=${1:-"root@192.168.15.83"}
 APP_DIR="/opt/quick-filler-test"
 
 echo "🚀 Iniciando deploy para $SERVER"
+echo "   Gateway: 200.158.242.69:5170 → $SERVER:5173"
 
 # Build locally first to verify
 echo "📦 Building locally..."
@@ -48,12 +54,22 @@ done
 
 # Show status
 docker compose ps
+
+# Check port 5173
+echo ""
+echo "🔍 Verificando porta 5173..."
+if ss -tlnp | grep -q ":5173"; then
+  echo "✅ Porta 5173 está ativa"
+else
+  echo "⚠️  Porta 5173 não está escutando"
+fi
 EOF
 
 echo ""
 echo "✅ Deploy concluído!"
 echo ""
-echo "🌐 Acesse: https://200.158.242.69"
+echo "🌐 Acesso externo: https://200.158.242.69 (via gateway porta 5170)"
+echo "🌐 Acesso local: http://192.168.15.83:5173"
 echo ""
 echo "Credenciais de teste:"
 echo "  Admin: admin@quickfiller.com / admin123"

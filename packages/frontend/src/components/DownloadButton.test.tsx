@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { DownloadButton } from './DownloadButton'
 
 // Mock the auth module
@@ -12,8 +12,8 @@ import { authenticatedFetch } from '../api/auth'
 const mockAuthenticatedFetch = vi.mocked(authenticatedFetch)
 
 describe('DownloadButton', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('renders three download buttons', () => {
@@ -33,20 +33,10 @@ describe('DownloadButton', () => {
       blob: () => Promise.resolve(mockBlob),
     } as Response)
 
-    // Mock URL.createObjectURL and document.createElement
-    const mockUrl = 'blob:test-url'
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue(mockUrl)
-    vi.spyOn(URL, 'revokeObjectURL')
-
-    const mockClick = vi.fn()
-    const mockRemove = vi.fn()
-    vi.spyOn(document, 'createElement').mockReturnValue({
-      href: '',
-      download: '',
-      click: mockClick,
-      remove: mockRemove,
-    } as unknown as HTMLAnchorElement)
-    vi.spyOn(document.body, 'appendChild')
+    // Spy on URL methods (they exist in jsdom via the setup file)
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-url')
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    const appendSpy = vi.spyOn(document.body, 'appendChild')
 
     render(<DownloadButton id="test-123" />)
 
@@ -56,6 +46,9 @@ describe('DownloadButton', () => {
       expect(mockAuthenticatedFetch).toHaveBeenCalledWith(
         '/api/transcricoes/test-123/planilha?formato=xlsx',
       )
+      expect(createSpy).toHaveBeenCalled()
+      expect(appendSpy).toHaveBeenCalled()
+      expect(revokeSpy).toHaveBeenCalled()
     })
   })
 
@@ -65,12 +58,8 @@ describe('DownloadButton', () => {
       blob: () => Promise.resolve(new Blob()),
     } as Response)
 
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
-    vi.spyOn(URL, 'revokeObjectURL')
-    vi.spyOn(document, 'createElement').mockReturnValue({
-      click: vi.fn(),
-      remove: vi.fn(),
-    } as unknown as HTMLAnchorElement)
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
     vi.spyOn(document.body, 'appendChild')
 
     render(<DownloadButton id="test-123" />)
@@ -81,6 +70,7 @@ describe('DownloadButton', () => {
       expect(mockAuthenticatedFetch).toHaveBeenCalledWith(
         '/api/transcricoes/test-123/planilha?formato=csv',
       )
+      expect(createSpy).toHaveBeenCalled()
     })
   })
 
@@ -90,12 +80,8 @@ describe('DownloadButton', () => {
       blob: () => Promise.resolve(new Blob()),
     } as Response)
 
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
-    vi.spyOn(URL, 'revokeObjectURL')
-    vi.spyOn(document, 'createElement').mockReturnValue({
-      click: vi.fn(),
-      remove: vi.fn(),
-    } as unknown as HTMLAnchorElement)
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
     vi.spyOn(document.body, 'appendChild')
 
     render(<DownloadButton id="test-123" />)
@@ -106,6 +92,7 @@ describe('DownloadButton', () => {
       expect(mockAuthenticatedFetch).toHaveBeenCalledWith(
         '/api/transcricoes/test-123/planilha?formato=json',
       )
+      expect(createSpy).toHaveBeenCalled()
     })
   })
 
@@ -113,6 +100,8 @@ describe('DownloadButton', () => {
     mockAuthenticatedFetch.mockResolvedValueOnce({
       ok: false,
     } as Response)
+
+    const createSpy = vi.spyOn(URL, 'createObjectURL')
 
     render(<DownloadButton id="test-123" />)
 
@@ -122,7 +111,7 @@ describe('DownloadButton', () => {
       expect(mockAuthenticatedFetch).toHaveBeenCalled()
     })
 
-    // Should not create download link
-    expect(document.createElement).not.toHaveBeenCalled()
+    // Component returns early when !response.ok, so no blob URL is created
+    expect(createSpy).not.toHaveBeenCalled()
   })
 })

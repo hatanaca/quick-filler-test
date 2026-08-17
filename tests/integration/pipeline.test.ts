@@ -14,7 +14,7 @@ import {
 import { InMemoryTranscriptionRepository, DiskFileStorage } from '@quickfiller/infrastructure'
 import { PdfJsExtractorAdapter, ExcelJsGeneratorAdapter } from '@quickfiller/infrastructure'
 import type { TranscriptionRepository, FileStoragePort, OcrEnginePort } from '@quickfiller/domain'
-import { getAuthHeaders } from '../helpers/auth'
+import { getAuthHeaders } from '../helpers/auth.js'
 
 const FIXTURES = join(__dirname, '..', 'fixtures', 'pdfs')
 

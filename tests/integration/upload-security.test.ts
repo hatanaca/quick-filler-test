@@ -18,7 +18,7 @@ import {
   type OcrEnginePort,
   type SpreadsheetGeneratorPort,
 } from '@quickfiller/domain'
-import { getAuthHeaders } from '../helpers/auth'
+import { getAuthHeaders } from '../helpers/auth.js'
 
 class FakeRepository implements TranscriptionRepository {
   items = new Map<string, Transcription>()

@@ -11,15 +11,23 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 export function PdfViewerInner({ file }: { file: File }) {
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
-  // A URL é criada apenas no effect: criar no initializer do useState vazava
-  // um blob por montagem (a URL inicial nunca era revogada).
   const [url, setUrl] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     const next = URL.createObjectURL(file)
     setUrl(next)
+    setPageNumber(1)
+    setNumPages(0)
+    setLoadError(false)
     return () => URL.revokeObjectURL(next)
   }, [file])
+
+  function handleRetry() {
+    setLoadError(false)
+    setRetryKey((k) => k + 1)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -28,6 +36,7 @@ export function PdfViewerInner({ file }: { file: File }) {
           disabled={pageNumber <= 1}
           onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
           className="rounded border border-gray-300 px-2 py-0.5 disabled:opacity-40"
+          aria-label="Página anterior"
         >
           ←
         </button>
@@ -38,18 +47,39 @@ export function PdfViewerInner({ file }: { file: File }) {
           disabled={pageNumber >= numPages}
           onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
           className="rounded border border-gray-300 px-2 py-0.5 disabled:opacity-40"
+          aria-label="Próxima página"
         >
           →
         </button>
       </div>
       <div className="flex-1 overflow-auto border border-gray-200 bg-gray-100 p-2">
-        <Document
-          file={url ?? undefined}
-          onLoadSuccess={({ numPages: n }) => setNumPages(n)}
-          className="mx-auto"
-        >
-          <Page pageNumber={pageNumber} renderTextLayer renderAnnotationLayer width={480} />
-        </Document>
+        {loadError ? (
+          <div
+            role="alert"
+            className="flex h-full flex-col items-center justify-center gap-3 text-center"
+          >
+            <p className="text-sm text-red-600">Não foi possível carregar o PDF.</p>
+            <button
+              onClick={handleRetry}
+              className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <Document
+            key={retryKey}
+            file={url ?? undefined}
+            onLoadSuccess={({ numPages: n }) => {
+              setNumPages(n)
+              setLoadError(false)
+            }}
+            onLoadError={() => setLoadError(true)}
+            className="mx-auto"
+          >
+            <Page pageNumber={pageNumber} renderTextLayer renderAnnotationLayer width={480} />
+          </Document>
+        )}
       </div>
     </div>
   )

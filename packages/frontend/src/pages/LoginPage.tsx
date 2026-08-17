@@ -59,7 +59,11 @@ export function LoginPage() {
             />
           </div>
 
-          {error && <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">{error}</div>}
+          {error && (
+            <div role="alert" className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"

@@ -13,8 +13,8 @@ export function Upload({ onUploaded }: UploadProps) {
     <div className="rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
       <h2 className="mb-4 text-lg font-semibold text-gray-800">Enviar documento</h2>
 
-      <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700">Tipo de documento</label>
+      <fieldset className="mb-4 border-0 p-0">
+        <legend className="mb-1 block text-sm font-medium text-gray-700">Tipo de documento</legend>
         <div className="flex gap-4">
           <label className="flex items-center gap-2">
             <input
@@ -37,10 +37,14 @@ export function Upload({ onUploaded }: UploadProps) {
             Holerite
           </label>
         </div>
-      </div>
+      </fieldset>
 
       <div className="mb-4">
+        <label htmlFor="pdf-upload" className="mb-1 block text-sm font-medium text-gray-700">
+          Arquivo PDF
+        </label>
         <input
+          id="pdf-upload"
           ref={inputRef}
           type="file"
           accept="application/pdf"
@@ -48,7 +52,7 @@ export function Upload({ onUploaded }: UploadProps) {
           className="block w-full text-sm text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-blue-700 hover:file:bg-blue-100"
         />
         {arquivo && (
-          <p className="mt-1 text-xs text-gray-500">
+          <p aria-live="polite" className="mt-1 text-xs text-gray-500">
             {arquivo.name} ({Math.round(arquivo.size / 1024)} KB)
           </p>
         )}
@@ -62,7 +66,11 @@ export function Upload({ onUploaded }: UploadProps) {
         {enviando ? 'Enviando…' : 'Enviar e processar'}
       </button>
 
-      {erro && <p className="mt-3 text-sm text-red-600">{erro}</p>}
+      {erro && (
+        <p role="alert" className="mt-3 text-sm text-red-600">
+          {erro}
+        </p>
+      )}
     </div>
   )
 }

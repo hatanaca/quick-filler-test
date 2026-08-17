@@ -8,7 +8,7 @@ interface ReviewTableProps {
   onChange: (value: unknown) => void
 }
 
-const WARNING_HEADER = ''
+const WARNING_HEADER = 'Problemas'
 
 /**
  * Tabela editável da transcrição, seguindo as colunas da planilha
@@ -148,14 +148,25 @@ export function ReviewTable({ transcricao, onChange }: ReviewTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
+        <caption className="sr-only">
+          {transcricao.tipo === 'cartao-ponto'
+            ? 'Dados extraídos do cartão de ponto'
+            : 'Dados extraídos do holerite'}
+        </caption>
         <thead>
           <tr className="text-white" style={{ backgroundColor: '#173772' }}>
             {headers.map((header) => (
-              <th key={header} className="border border-gray-300 px-2 py-1.5 text-left font-bold">
+              <th
+                key={header}
+                scope="col"
+                className="border border-gray-300 px-2 py-1.5 text-left font-bold"
+              >
                 {header}
               </th>
             ))}
-            <th className="border border-gray-300 px-2 py-1.5">{WARNING_HEADER}</th>
+            <th scope="col" className="border border-gray-300 px-2 py-1.5">
+              {WARNING_HEADER}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -166,7 +177,7 @@ export function ReviewTable({ transcricao, onChange }: ReviewTableProps) {
                   <input
                     className="w-full bg-transparent outline-none"
                     value={cell ?? ''}
-                    // holerite: coluna 0 (número da página) é read-only
+                    aria-label={`${headers[colIndex] ?? ''} linha ${rowIndex + 1}`}
                     readOnly={transcricao.tipo === 'holerite' && colIndex === 0}
                     onChange={(e) => editRow(rowIndex, colIndex, e.target.value)}
                   />

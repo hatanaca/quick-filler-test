@@ -6,7 +6,8 @@
 **Type:** Combined UX + Accessibility audit  
 **Flow:** Full end-to-end user journey  
 **Screens captured:** 8 screenshots across all app states  
-**Date:** 2026-08-16
+**Date:** 2026-08-16  
+**Last updated:** 2026-08-17 (bug fixes + Tailwind + auth)
 
 ### Screenshots
 
@@ -180,3 +181,87 @@
 
 12. **Improve mobile experience** — stack download buttons vertically, collapse PDF viewer, add `inputmode="numeric"` for numeric fields.  
     _Files:_ `DownloadButton.tsx`, `PdfViewer.tsx`, `ReviewTable.tsx`
+
+---
+
+## 9. Changes Applied
+
+### 9.1 Tailwind CSS Installation (2026-08-16)
+
+The app used Tailwind CSS utility classes throughout all components but Tailwind was never installed — the app rendered with zero styling.
+
+**Changes:**
+
+- Installed `tailwindcss@4.3.3` + `@tailwindcss/vite`
+- Created `packages/frontend/src/index.css` with `@import "tailwindcss"`
+- Updated `packages/frontend/vite.config.ts` with Tailwind plugin
+- Updated `packages/frontend/src/main.tsx` to import CSS
+
+**Files modified:**
+
+- `packages/frontend/package.json`
+- `packages/frontend/vite.config.ts`
+- `packages/frontend/src/index.css` (new)
+- `packages/frontend/src/main.tsx`
+
+### 9.2 Accessibility Fixes (2026-08-16)
+
+Applied all P1 accessibility recommendations from the audit:
+
+| Fix                             | File                 | Change                                                                         |
+| ------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
+| Fieldset/legend for radio group | `Upload.tsx`         | Wrapped radio buttons in `<fieldset>` with `<legend>`                          |
+| File input label                | `Upload.tsx`         | Added `<label for="pdf-upload">`                                               |
+| ARIA landmarks                  | `App.tsx`            | Added `<main>` and `<header>` elements                                         |
+| Table caption                   | `ReviewTable.tsx`    | Added `<caption class="sr-only">`                                              |
+| Table header scope              | `ReviewTable.tsx`    | Added `scope="col"` to all `<th>` elements                                     |
+| Input aria-labels               | `ReviewTable.tsx`    | Added `aria-label="Coluna linha N"` to table inputs                            |
+| Warning badge text              | `WarningBadge.tsx`   | Changed from `•` to `• Aviso:` and `⚠` to `⚠ Erro:` with `role="status"`       |
+| Error role="alert"              | `App.tsx`            | Added `role="alert"` to error messages and `role="status"` to success messages |
+| PDF nav aria-labels             | `PdfViewerInner.tsx` | Added `aria-label="Página anterior"` and `"Próxima página"`                    |
+| File selection aria-live        | `Upload.tsx`         | Added `aria-live="polite"` to file info paragraph                              |
+
+### 9.3 UX Fixes (2026-08-16)
+
+| Fix                       | File                         | Change                                                              |
+| ------------------------- | ---------------------------- | ------------------------------------------------------------------- |
+| Download links spacing    | Already had Tailwind classes | Now working with Tailwind installed                                 |
+| PDF viewer error handling | `PdfViewerInner.tsx`         | Added error state with "Tentar novamente" button and `role="alert"` |
+| Save error styling        | `App.tsx`                    | Red background, border, `!` icon, `role="alert"`                    |
+| Processing status         | `App.tsx`                    | Added `role="status"` to processing banner                          |
+
+### 9.4 Bug Fixes (2026-08-17)
+
+| Bug                                            | Severity      | File                              | Fix                                                        |
+| ---------------------------------------------- | ------------- | --------------------------------- | ---------------------------------------------------------- |
+| `/api/auth/me` não renovava token              | Critical      | `AuthContext.tsx`                 | Changed from `fetch` to `authenticatedFetch`               |
+| Token na URL de download                       | Security      | `DownloadButton.tsx`, `client.ts` | Download via `authenticatedFetch` + blob URL               |
+| PDF não resetava página ao trocar arquivo      | UX            | `PdfViewerInner.tsx`              | Reset `pageNumber`, `numPages`, `loadError` no `useEffect` |
+| Erro do login sem `role="alert"`               | Accessibility | `LoginPage.tsx`                   | Added `role="alert"`                                       |
+| `createTranscription` setava token manualmente | Code quality  | `client.ts`                       | Removed redundant code, cleaned imports                    |
+
+### 9.5 Infrastructure Changes (2026-08-17)
+
+| Change                    | File                                                     | Description                                          |
+| ------------------------- | -------------------------------------------------------- | ---------------------------------------------------- |
+| nginx.conf simplificado   | `nginx.conf`                                             | Removed SSL/${DOMAIN} for local dev                  |
+| Docker port mapping       | `docker-compose.yml`                                     | Changed to `127.0.0.1:5173:80`                       |
+| Fastify type declarations | `packages/infrastructure/src/types/fastify-plugins.d.ts` | Added types for `@fastify/cookie` and `@fastify/jwt` |
+| package-lock.json sync    | `package-lock.json`                                      | Updated to match all dependencies                    |
+
+### 9.6 Authentication System (pre-existing)
+
+The app already had an authentication system with JWT tokens:
+
+- Login page with email/password
+- Access token (15min) + refresh token (7 days, httpOnly cookie)
+- Auto-refresh every 14 minutes
+- `authenticatedFetch` with automatic 401 retry
+- Protected routes via `Authorization: Bearer` header
+
+**Files:**
+
+- `packages/frontend/src/contexts/AuthContext.tsx`
+- `packages/frontend/src/api/auth.ts`
+- `packages/frontend/src/pages/LoginPage.tsx`
+- `packages/frontend/src/main.tsx` (AppWithAuth wrapper)

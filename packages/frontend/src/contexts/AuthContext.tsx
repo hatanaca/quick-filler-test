@@ -1,5 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { login as apiLogin, logout as apiLogout, refreshToken as apiRefresh } from '../api/auth'
+import {
+  login as apiLogin,
+  logout as apiLogout,
+  refreshToken as apiRefresh,
+  authenticatedFetch,
+} from '../api/auth'
 
 interface User {
   id: string
@@ -27,10 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Try to refresh the token
         await apiRefresh()
-        // Get current user
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-        })
+        // Get current user (uses authenticatedFetch for auto token refresh)
+        const response = await authenticatedFetch('/api/auth/me')
         if (response.ok) {
           const userData = await response.json()
           setUser(userData)

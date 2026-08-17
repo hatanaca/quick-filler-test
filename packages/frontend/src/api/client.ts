@@ -1,5 +1,5 @@
-import type { DocumentType, ExportFormat, Transcription } from '../types'
-import { authenticatedFetch, getAccessToken } from './auth'
+import type { DocumentType, Transcription } from '../types'
+import { authenticatedFetch } from './auth'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
@@ -25,15 +25,8 @@ export async function createTranscription(
   form.append('arquivo', arquivo)
   form.append('tipo', tipo)
 
-  const token = getAccessToken()
-  const headers: HeadersInit = {}
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-
   const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes`, {
     method: 'POST',
-    headers,
     body: form,
   })
   return handle<{ id: string }>(response)
@@ -51,9 +44,4 @@ export async function updateTranscription(id: string, value: unknown): Promise<v
     body: JSON.stringify({ value }),
   })
   await handle<void>(response)
-}
-
-export function downloadSpreadsheetUrl(id: string, formato: ExportFormat): string {
-  const token = getAccessToken()
-  return `${BASE_URL}/api/transcricoes/${id}/planilha?formato=${formato}${token ? `&token=${token}` : ''}`
 }

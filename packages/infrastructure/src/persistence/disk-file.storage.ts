@@ -1,5 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { resolve, join } from 'node:path'
 import type { FileStoragePort } from '@quickfiller/domain'
 
 /**
@@ -10,7 +10,7 @@ export class DiskFileStorage implements FileStoragePort {
   private readonly dir: string
 
   constructor(baseDir: string = join(process.cwd(), 'uploads')) {
-    this.dir = baseDir
+    this.dir = resolve(baseDir)
   }
 
   async init(): Promise<void> {
@@ -18,7 +18,11 @@ export class DiskFileStorage implements FileStoragePort {
   }
 
   private pathFor(id: string): string {
-    return join(this.dir, `${id}.pdf`)
+    const filePath = resolve(this.dir, `${id}.pdf`)
+    if (!filePath.startsWith(this.dir + '/') && filePath !== this.dir) {
+      throw new Error('Invalid file path')
+    }
+    return filePath
   }
 
   async save(id: string, buffer: Buffer): Promise<void> {

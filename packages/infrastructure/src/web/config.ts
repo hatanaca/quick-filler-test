@@ -36,18 +36,44 @@ function positiveFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number)
   return value > 0 ? value : fallback
 }
 
+const WEAK_JWT_SECRETS: ReadonlySet<string> = new Set([
+  'your-production-secret-key-here',
+  'your-secret-key-here',
+  'secret',
+  'password',
+  'changeme',
+  'jwt-secret',
+  'supersecret',
+  'my-secret',
+  'test-secret',
+])
+
+const MIN_JWT_SECRET_LENGTH = 32
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const uploadMaxSizeMb = positiveFromEnv(env, 'UPLOAD_MAX_SIZE_MB', 20)
 
   // Generate a random secret for development/test; in production, use a strong secret
   const nodeEnv = (env.NODE_ENV as AppConfig['nodeEnv']) ?? 'development'
-  const jwtSecret =
-    env.JWT_SECRET ??
-    (nodeEnv === 'production'
-      ? (() => {
-          throw new Error('JWT_SECRET environment variable is required in production')
-        })()
-      : 'dev-secret-' + randomBytes(24).toString('hex'))
+  const rawSecret = env.JWT_SECRET
+
+  if (nodeEnv === 'production') {
+    if (!rawSecret) {
+      throw new Error('JWT_SECRET environment variable is required in production')
+    }
+    if (WEAK_JWT_SECRETS.has(rawSecret)) {
+      throw new Error(
+        'JWT_SECRET is a known placeholder. Generate a strong secret: openssl rand -base64 32',
+      )
+    }
+    if (rawSecret.length < MIN_JWT_SECRET_LENGTH) {
+      throw new Error(
+        `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters. Generate: openssl rand -base64 32`,
+      )
+    }
+  }
+
+  const jwtSecret = rawSecret ?? 'dev-secret-' + randomBytes(24).toString('hex')
 
   return {
     nodeEnv: (env.NODE_ENV as AppConfig['nodeEnv']) ?? 'development',

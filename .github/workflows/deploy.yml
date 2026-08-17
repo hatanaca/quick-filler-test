@@ -42,11 +42,11 @@ jobs:
           SSH_PORT="6060"
           APP_DIR="/opt/quick-filler-test"
 
-          SSH_CMD="ssh -p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$DEPLOY_HOST"
+          SSH_CMD="ssh -p $SSH_PORT -i ~/.ssh/deploy_key $SSH_USER@$DEPLOY_HOST"
 
           echo "📤 Syncing files to server..."
           rsync -avz --delete \
-            -e "ssh -p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            -e "ssh -p $SSH_PORT -i ~/.ssh/deploy_key" \
             --exclude 'node_modules' \
             --exclude '.git' \
             --exclude 'uploads' \

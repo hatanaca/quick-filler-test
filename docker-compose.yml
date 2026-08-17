@@ -29,6 +29,11 @@ services:
       TRUST_PROXY: loopback,172.16.0.0/12
       # JWT Secret (REQUIRED in production)
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      # User credentials (REQUIRED in production)
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL is required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      USER_EMAIL: ${USER_EMAIL:?USER_EMAIL is required}
+      USER_PASSWORD: ${USER_PASSWORD:?USER_PASSWORD is required}
     volumes:
       - uploads:/app/uploads
     healthcheck:
@@ -44,7 +49,7 @@ services:
       context: .
       target: frontend
     ports:
-      - '0.0.0.0:5173:80'
+      - '127.0.0.1:5173:80'
     environment:
       DOMAIN: ${DOMAIN:-localhost}
     depends_on:

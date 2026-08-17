@@ -60,6 +60,12 @@ VITE_API_URL=https://200.158.242.69/filler/api
 
 # Gerar secret forte para JWT
 JWT_SECRET=$(openssl rand -base64 32)
+
+# Credenciais de produção (REQUIRED)
+ADMIN_EMAIL=admin@seudominio.com
+ADMIN_PASSWORD=$(openssl rand -base64 24)
+USER_EMAIL=user@seudominio.com
+USER_PASSWORD=$(openssl rand -base64 24)
 ```
 
 ### 4. Construir e iniciar os containers
@@ -111,10 +117,19 @@ docker compose logs -f
 docker compose restart backend
 ```
 
-## Credenciais de Teste
+## Credenciais
 
-- **Admin:** admin@quickfiller.com / admin123
-- **Usuário:** user@quickfiller.com / user123
+As credenciais são configuradas via variáveis de ambiente no `.env`:
+
+```bash
+# Gerar senhas fortes: openssl rand -base64 24
+ADMIN_EMAIL=admin@seudominio.com
+ADMIN_PASSWORD=<senha-forte>
+USER_EMAIL=user@seudominio.com
+USER_PASSWORD=<senha-forte>
+```
+
+> **Importante:** Nunca commite senhas no repositório. Use variáveis de ambiente ou um secret manager.
 
 ## Troubleshooting
 

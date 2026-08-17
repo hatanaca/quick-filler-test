@@ -13,6 +13,9 @@ interface RefreshResponse {
   accessToken: string
 }
 
+// Module-level token storage (not accessible via XSS unlike sessionStorage)
+let accessToken: string | null = null
+
 /**
  * Login with email and password
  */
@@ -33,9 +36,9 @@ export async function login(email: string, password: string): Promise<LoginRespo
 
   const data = await response.json()
 
-  // Store access token in memory (not localStorage for security)
+  // Store access token in module-level variable (not sessionStorage for security)
   // The refresh token is stored as httpOnly cookie
-  sessionStorage.setItem('accessToken', data.accessToken)
+  accessToken = data.accessToken
 
   return data
 }
@@ -50,7 +53,7 @@ export async function logout(): Promise<void> {
       credentials: 'include',
     })
   } finally {
-    sessionStorage.removeItem('accessToken')
+    accessToken = null
   }
 }
 
@@ -68,16 +71,16 @@ export async function refreshToken(): Promise<string> {
   }
 
   const data: RefreshResponse = await response.json()
-  sessionStorage.setItem('accessToken', data.accessToken)
+  accessToken = data.accessToken
 
   return data.accessToken
 }
 
 /**
- * Get current access token from session storage
+ * Get current access token from memory
  */
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem('accessToken')
+  return accessToken
 }
 
 /**

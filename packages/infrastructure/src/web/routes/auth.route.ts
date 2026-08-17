@@ -24,29 +24,78 @@ function verifyPassword(password: string, stored: string): boolean {
   return timingSafeEqual(derived, expected)
 }
 
-const USERS = new Map<
-  string,
-  { id: string; email: string; passwordHash: string; role: 'admin' | 'user' }
->()
+interface StoredUser {
+  id: string
+  email: string
+  passwordHash: string
+  role: 'admin' | 'user'
+}
 
-// Seed demo users with hashed passwords
-USERS.set('admin@quickfiller.com', {
-  id: 'usr_admin_001',
-  email: 'admin@quickfiller.com',
-  passwordHash: hashPassword('admin123'),
-  role: 'admin',
-})
-USERS.set('user@quickfiller.com', {
-  id: 'usr_user_001',
-  email: 'user@quickfiller.com',
-  passwordHash: hashPassword('user123'),
-  role: 'user',
-})
+const USERS = new Map<string, StoredUser>()
 
-const REFRESH_TOKENS = new Set<string>()
+function seedUsers(): void {
+  const nodeEnv = process.env.NODE_ENV ?? 'development'
+  const adminEmail = process.env.ADMIN_EMAIL
+  const adminPassword = process.env.ADMIN_PASSWORD
+  const userEmail = process.env.USER_EMAIL
+  const userPassword = process.env.USER_PASSWORD
+
+  if (adminEmail && adminPassword) {
+    USERS.set(adminEmail, {
+      id: 'usr_admin_001',
+      email: adminEmail,
+      passwordHash: hashPassword(adminPassword),
+      role: 'admin',
+    })
+  }
+
+  if (userEmail && userPassword) {
+    USERS.set(userEmail, {
+      id: 'usr_user_001',
+      email: userEmail,
+      passwordHash: hashPassword(userPassword),
+      role: 'user',
+    })
+  }
+
+  if (USERS.size === 0 && nodeEnv !== 'production') {
+    USERS.set('admin@quickfiller.com', {
+      id: 'usr_admin_001',
+      email: 'admin@quickfiller.com',
+      passwordHash: hashPassword('admin123'),
+      role: 'admin',
+    })
+    USERS.set('user@quickfiller.com', {
+      id: 'usr_user_001',
+      email: 'user@quickfiller.com',
+      passwordHash: hashPassword('user123'),
+      role: 'user',
+    })
+  }
+}
+
+seedUsers()
+
+// Map of refresh tokens to their creation timestamp
+const REFRESH_TOKENS = new Map<string, number>()
+const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1000 // 1 hour
+
+// Periodic cleanup of expired tokens to prevent memory leak
+setInterval(() => {
+  const now = Date.now()
+  for (const [token, createdAt] of REFRESH_TOKENS) {
+    if (now - createdAt > TOKEN_MAX_AGE_MS) {
+      REFRESH_TOKENS.delete(token)
+    }
+  }
+}, CLEANUP_INTERVAL_MS)
 
 function setRefreshCookie(reply: FastifyReply, token: string, request: FastifyRequest): void {
-  const isSecure = request.headers['x-forwarded-proto'] === 'https' || request.protocol === 'https'
+  const isSecure =
+    process.env.NODE_ENV === 'production' ||
+    request.headers['x-forwarded-proto'] === 'https' ||
+    request.protocol === 'https'
   reply.setCookie('refreshToken', token, {
     path: '/api/auth',
     httpOnly: true,
@@ -84,7 +133,7 @@ export function registerAuthRoutes(app: FastifyInstance): void {
         role: user.role,
       })
 
-      REFRESH_TOKENS.add(refreshToken)
+      REFRESH_TOKENS.set(refreshToken, Date.now())
       setRefreshCookie(reply, refreshToken, request)
 
       return {
@@ -131,7 +180,7 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     })
 
     REFRESH_TOKENS.delete(refreshToken)
-    REFRESH_TOKENS.add(newTokens.refreshToken)
+    REFRESH_TOKENS.set(newTokens.refreshToken, Date.now())
     setRefreshCookie(reply, newTokens.refreshToken, request)
 
     return {

@@ -43,4 +43,37 @@ describe('loadConfig', () => {
     const config = loadConfig({ RETENTION_MINUTES: 'abc' })
     expect(config.retentionMinutes).toBe(60)
   })
+
+  describe('JWT_SECRET validation in production', () => {
+    it('rejeita JWT_SECRET ausente em produção', () => {
+      expect(() => loadConfig({ NODE_ENV: 'production' })).toThrow(
+        'JWT_SECRET environment variable is required in production',
+      )
+    })
+
+    it('rejeita JWT_SECRET placeholder em produção', () => {
+      expect(() =>
+        loadConfig({ NODE_ENV: 'production', JWT_SECRET: 'your-production-secret-key-here' }),
+      ).toThrow('JWT_SECRET is a known placeholder')
+    })
+
+    it('rejeita JWT_SECRET curto em produção', () => {
+      expect(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: 'short' })).toThrow(
+        'JWT_SECRET must be at least 32 characters',
+      )
+    })
+
+    it('aceita JWT_SECRET forte em produção', () => {
+      const config = loadConfig({
+        NODE_ENV: 'production',
+        JWT_SECRET: 'a'.repeat(32),
+      })
+      expect(config.jwtSecret).toBe('a'.repeat(32))
+    })
+
+    it('aceita JWT_SECRET ausente em desenvolvimento (gera aleatório)', () => {
+      const config = loadConfig({ NODE_ENV: 'development' })
+      expect(config.jwtSecret).toMatch(/^dev-secret-/)
+    })
+  })
 })

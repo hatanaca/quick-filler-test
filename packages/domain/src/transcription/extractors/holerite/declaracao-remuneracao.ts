@@ -1,7 +1,9 @@
-import { PageHolerite } from '../../value-objects/page-holerite.vo.js'
+import type { PageHolerite } from '../../value-objects/page-holerite.vo.js'
 import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
+import { normalizeMonth } from '../../../shared/utils/date-utils.js'
 import { cellsOf, stripSign } from './money.js'
+import { createCompetenceAccumulator } from './competence-builder.js'
 
 const MES_ANO_RE = /M[eê]s\/Ano\s*:\s*(\d{2})\/(\d{4})/i
 
@@ -16,28 +18,7 @@ const BASE_LABEL_RE =
  * ser negativo (desconto); a Base pode ser texto ("JULHO/18") ou valor.
  */
 export function parseDeclaracaoRemuneracao(text: string, pageIndex: number): PageHolerite[] {
-  const pages: PageHolerite[] = []
-  let current: {
-    year: string
-    month: string
-    fields: PayrollField[]
-    bases: PayrollBase[]
-  } | null = null
-
-  const flush = () => {
-    if (current) {
-      pages.push(
-        PageHolerite.from({
-          page: pageIndex + 1,
-          year: current.year,
-          month: current.month,
-          fields: current.fields,
-          bases: current.bases,
-        }),
-      )
-    }
-    current = null
-  }
+  const acc = createCompetenceAccumulator(pageIndex)
 
   for (const line of text.split('\n')) {
     const cells = cellsOf(line)
@@ -47,18 +28,11 @@ export function parseDeclaracaoRemuneracao(text: string, pageIndex: number): Pag
     // Nova seção (MÊS / ACERTO) — cada uma tem seu próprio Mês/Ano.
     const mesAno = MES_ANO_RE.exec(line)
     if (mesAno && /Folha de Pagamento/i.test(line)) {
-      flush()
-      const rawMonth = mesAno[1] ?? '0?'
-      const monthNum = Number(rawMonth)
-      current = {
-        year: mesAno[2] ?? '????',
-        month: rawMonth.includes('?') || (monthNum >= 1 && monthNum <= 12) ? rawMonth : '0?',
-        fields: [],
-        bases: [],
-      }
+      acc.start(mesAno[2] ?? '????', normalizeMonth(mesAno[1] ?? '0?'))
       continue
     }
 
+    const current = acc.getCurrent()
     if (!current) continue
     if (first === 'Verba' || first.startsWith('Verba')) continue
 
@@ -82,7 +56,6 @@ export function parseDeclaracaoRemuneracao(text: string, pageIndex: number): Pag
       if (label && value) current.bases.push(PayrollBase.from({ label, value }))
     }
   }
-  flush()
 
-  return pages
+  return acc.getPages()
 }

@@ -1,9 +1,10 @@
 import { twoDigits } from '../../../shared/utils/text-utils.js'
-import { PageHolerite } from '../../value-objects/page-holerite.vo.js'
+import type { PageHolerite } from '../../value-objects/page-holerite.vo.js'
 import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
 import { parseMonthYearAbbr } from '../../../shared/utils/date-utils.js'
 import { cellsOf, splitCodeLabel, stripSign } from './money.js'
+import { createCompetenceAccumulator } from './competence-builder.js'
 
 /** Rótulos da coluna RESULTADOS → nome canônico de base. */
 const RESULT_BASES: Record<string, string> = {
@@ -29,28 +30,7 @@ function isNumberCell(cell: string): boolean {
  * `fields` (código 1-3 dígitos opcional); RESULTADOS viram `bases`.
  */
 export function parseFichaFinanceira(text: string, pageIndex: number): PageHolerite[] {
-  const pages: PageHolerite[] = []
-  let current: {
-    year: string
-    month: string
-    fields: PayrollField[]
-    bases: PayrollBase[]
-  } | null = null
-
-  const flush = () => {
-    if (current) {
-      pages.push(
-        PageHolerite.from({
-          page: pageIndex + 1,
-          year: current.year,
-          month: current.month,
-          fields: current.fields,
-          bases: current.bases,
-        }),
-      )
-    }
-    current = null
-  }
+  const acc = createCompetenceAccumulator(pageIndex)
 
   for (const line of text.split('\n')) {
     const trimmed = line.trim()
@@ -59,19 +39,14 @@ export function parseFichaFinanceira(text: string, pageIndex: number): PageHoler
     // "Mês: abr-17" inicia uma nova competência.
     const mesMatch = /^M[eê]s\s*:\s+(\S.*)$/.exec(trimmed)
     if (mesMatch) {
-      flush()
       const my = parseMonthYearAbbr(mesMatch[1] ?? '')
       if (my) {
-        current = {
-          year: String(my.year),
-          month: twoDigits(my.month),
-          fields: [],
-          bases: [],
-        }
+        acc.start(String(my.year), twoDigits(my.month))
       }
       continue
     }
 
+    const current = acc.getCurrent()
     if (!current) continue
 
     const cells = cellsOf(line)
@@ -99,9 +74,8 @@ export function parseFichaFinanceira(text: string, pageIndex: number): PageHoler
     const fieldCells = resultIndex >= 0 ? cells.slice(0, resultIndex) : cells
     parseFichaFields(fieldCells, current.fields)
   }
-  flush()
 
-  return pages
+  return acc.getPages()
 }
 
 function parseFichaFields(cells: string[], fields: PayrollField[]): void {

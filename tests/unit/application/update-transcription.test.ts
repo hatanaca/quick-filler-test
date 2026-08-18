@@ -30,11 +30,12 @@ describe('UpdateTranscriptionUseCase', () => {
     const repo = new FakeRepository()
     const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
-    t.complete({ pages: [PageCartaoPonto.from({ page: 1, days: [] })] })
+    t.complete({ kind: 'cartao-ponto', pages: [PageCartaoPonto.from({ page: 1, days: [] })] })
     await repo.save(t)
     const useCase = new UpdateTranscriptionUseCase(repo)
 
     const novoValue = {
+      kind: 'cartao-ponto' as const,
       pages: [
         PageCartaoPonto.from({
           page: 1,
@@ -53,7 +54,7 @@ describe('UpdateTranscriptionUseCase', () => {
     await expect(
       useCase.execute({
         id: TranscriptionId.from('11111111-1111-4111-8111-111111111111'),
-        value: { pages: [] },
+        value: { kind: 'holerite', pages: [] },
       }),
     ).rejects.toThrow(/não encontrada/)
   })
@@ -66,7 +67,9 @@ describe('UpdateTranscriptionUseCase', () => {
     await repo.save(t)
     const useCase = new UpdateTranscriptionUseCase(repo)
 
-    await expect(useCase.execute({ id, value: { pages: [] } })).rejects.toThrow(/concluído|status/)
+    await expect(useCase.execute({ id, value: { kind: 'holerite', pages: [] } })).rejects.toThrow(
+      /concluído|status/,
+    )
   })
 
   it('lança erro quando transcrição ainda está processando', async () => {
@@ -75,6 +78,8 @@ describe('UpdateTranscriptionUseCase', () => {
     await repo.save(Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO }))
     const useCase = new UpdateTranscriptionUseCase(repo)
 
-    await expect(useCase.execute({ id, value: { pages: [] } })).rejects.toThrow(/concluído|status/)
+    await expect(useCase.execute({ id, value: { kind: 'holerite', pages: [] } })).rejects.toThrow(
+      /concluído|status/,
+    )
   })
 })

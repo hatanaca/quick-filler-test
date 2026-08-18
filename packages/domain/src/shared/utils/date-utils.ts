@@ -21,6 +21,16 @@ export const PORTUGUESE_MONTHS: Record<string, number> = {
 }
 
 /**
+ * Normaliza string de mês (1-2 dígitos, pode conter '?') para formato
+ * zero-padded "01"-"12". Se inválido ou contém '?', retorna "0?".
+ */
+export function normalizeMonth(raw: string): string {
+  if (raw.includes('?')) return '0?'
+  const num = Number(raw)
+  return num >= 1 && num <= 12 ? String(num).padStart(2, '0') : '0?'
+}
+
+/**
  * Parseia competência no formato "abr-17" (mês abreviado + ano 2 dígitos).
  * Assume anos >= 2000 para "00"-"99" (os documentos de exemplo vão de 2017 a 2025).
  */

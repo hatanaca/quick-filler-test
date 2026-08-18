@@ -1,6 +1,7 @@
 import { PageHolerite } from '../../value-objects/page-holerite.vo.js'
 import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
+import { normalizeMonth } from '../../../shared/utils/date-utils.js'
 import { cellsOf, lastMoney, splitCodeLabel, stripSign } from './money.js'
 
 const PERIODO_RE = /Per[ií]odo\s*:\s*(\d{2})\/(\d{4})/
@@ -27,7 +28,7 @@ function isNumber(value: string): boolean {
 export function parseDemonstrativo(text: string, pageIndex: number): PageHolerite[] {
   const competencia = PERIODO_RE.exec(text)
   const year = competencia?.[2] ?? '????'
-  const month = competencia?.[1] ?? '0?'
+  const month = normalizeMonth(competencia?.[1] ?? '0?')
 
   const fields: PayrollField[] = []
   const bases: PayrollBase[] = []

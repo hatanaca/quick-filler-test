@@ -47,7 +47,7 @@ function detectLayout(text: string): LayoutParser {
 export const HoleriteExtractor: DocumentExtractor = {
   extract(pagesText: string[]): HoleriteResult {
     const raw = pagesText.flatMap((text, index) => detectLayout(text)(text, index))
-    return { pages: mergeDuplicateEntries(raw) }
+    return { kind: 'holerite', pages: mergeDuplicateEntries(raw) }
   },
 }
 

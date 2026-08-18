@@ -32,10 +32,11 @@ export function parseReciboPagamento(text: string, pageIndex: number): PageHoler
   const fields: PayrollField[] = []
   const bases: PayrollBase[] = []
 
+  // Parse label-value pairs without polynomial backtracking:
+  // find all monetary values, then split the line at their boundaries.
+  const moneyRe = new RegExp(SIGNED_MONEY_RE.source, 'g')
+
   for (const line of text.split('\n')) {
-    // Parse label-value pairs without polynomial backtracking:
-    // find all monetary values, then split the line at their boundaries.
-    const moneyRe = new RegExp(SIGNED_MONEY_RE.source, 'g')
     const values: Array<{ start: number; end: number; raw: string }> = []
     for (const m of line.matchAll(moneyRe)) {
       values.push({ start: m.index ?? 0, end: (m.index ?? 0) + m[0].length, raw: m[0] })

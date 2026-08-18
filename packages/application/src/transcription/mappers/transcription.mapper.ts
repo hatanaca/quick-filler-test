@@ -1,7 +1,6 @@
 import type {
   CartaoPontoResult,
   DayRecord,
-  DocumentType,
   HoleriteResult,
   PageCartaoPonto,
   PageHolerite,
@@ -71,11 +70,11 @@ function holeriteToJson(result: HoleriteResult): JsonHolerite {
   }
 }
 
-function serializeValue(value: TranscriptionResult, tipo: DocumentType): unknown {
-  if (tipo === 'cartao-ponto') {
-    return cartaoToJson(value as CartaoPontoResult)
+function serializeValue(value: TranscriptionResult): unknown {
+  if (value.kind === 'cartao-ponto') {
+    return cartaoToJson(value)
   }
-  return holeriteToJson(value as HoleriteResult)
+  return holeriteToJson(value)
 }
 
 export function toResponse(transcription: Transcription): TranscriptionResponse {
@@ -84,6 +83,6 @@ export function toResponse(transcription: Transcription): TranscriptionResponse 
     tipo: transcription.tipo,
     status: transcription.status,
     erro: transcription.erro,
-    value: transcription.value ? serializeValue(transcription.value, transcription.tipo) : null,
+    value: transcription.value ? serializeValue(transcription.value) : null,
   }
 }

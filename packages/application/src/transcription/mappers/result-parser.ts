@@ -82,7 +82,7 @@ function parseCartao(value: unknown): TranscriptionResult {
     })
     return PageCartaoPonto.from({ page, days })
   })
-  return { pages }
+  return { kind: 'cartao-ponto', pages }
 }
 
 function parseHolerite(value: unknown): TranscriptionResult {
@@ -109,7 +109,7 @@ function parseHolerite(value: unknown): TranscriptionResult {
     )
     return PageHolerite.from({ page, year, month, fields, bases })
   })
-  return { pages }
+  return { kind: 'holerite', pages }
 }
 
 /** Converte JSON vindo do PUT /api/transcricoes em resultado de domínio validado. */

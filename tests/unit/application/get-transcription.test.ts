@@ -54,7 +54,7 @@ describe('GetTranscriptionUseCase', () => {
     const repo = new FakeRepository()
     const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.HOLERITE })
-    t.complete({ pages: [] })
+    t.complete({ kind: 'holerite', pages: [] })
     await repo.save(t)
     const useCase = new GetTranscriptionUseCase(repo)
 
@@ -66,7 +66,7 @@ describe('GetTranscriptionUseCase', () => {
     const repo = new FakeRepository()
     const id = TranscriptionId.from('00000000-0000-4000-8000-000000000001')
     const t = Transcription.create({ id, tipo: DocumentType.CARTAO_PONTO })
-    t.complete({ pages: [] })
+    t.complete({ kind: 'cartao-ponto', pages: [] })
     await repo.save(t)
     const useCase = new GetTranscriptionUseCase(repo)
 

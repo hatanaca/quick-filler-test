@@ -1,6 +1,7 @@
 import { PageHolerite } from '../../value-objects/page-holerite.vo.js'
 import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
+import { normalizeMonth } from '../../../shared/utils/date-utils.js'
 import { SIGNED_MONEY_RE, lastMoney, moneyTokens, stripSign } from './money.js'
 
 const COMPETENCIA_RE = /(?:Compet[eê]ncia|referente a)[:\s.]*(\d{2})\/(\d{4})/i
@@ -23,10 +24,7 @@ const BASE_LABELS = [
 export function parseStandard(text: string, pageIndex: number): PageHolerite[] {
   const competenceMatch = text.match(COMPETENCIA_RE)
   const year = competenceMatch?.[2] ?? '????'
-  const rawMonth = competenceMatch?.[1] ?? '0?'
-  const monthNum = Number(rawMonth)
-  const month =
-    rawMonth.includes('?') || (monthNum >= 1 && monthNum <= 12) ? rawMonth.padStart(2, '0') : '0?'
+  const month = normalizeMonth(competenceMatch?.[1] ?? '0?')
 
   const fields: PayrollField[] = []
   const bases: PayrollBase[] = []

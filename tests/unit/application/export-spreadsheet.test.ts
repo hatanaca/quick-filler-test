@@ -52,6 +52,7 @@ function buildConcluded(tipo: DocumentType, repo: FakeRepository) {
   const t = Transcription.create({ id, tipo })
   if (tipo === DocumentType.CARTAO_PONTO) {
     t.complete({
+      kind: 'cartao-ponto',
       pages: [
         PageCartaoPonto.from({
           page: 1,
@@ -68,7 +69,7 @@ function buildConcluded(tipo: DocumentType, repo: FakeRepository) {
       ],
     })
   } else {
-    t.complete({ pages: [] })
+    t.complete({ kind: 'holerite', pages: [] })
   }
   repo.items.set('00000000-0000-4000-8000-000000000001', t)
   return id

@@ -31,7 +31,7 @@ const BB_RANGE_RE = /(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:?\d{2})/
 
 interface SiponDay {
   day: number
-  punches: { kind: 'IN' | 'OUT'; time_raw: string; time_hhmm: string }[]
+  punches: Punch[]
 }
 
 /** Normaliza "18:15" e "1815" (OCR sem o ":") → "18:15". */
@@ -74,7 +74,7 @@ export const CartaoPontoExtractor: DocumentExtractor = {
       if (isSipon(text)) return extractSiponPage(text, index)
       return extractStandardPage(text, index)
     })
-    return { pages: removeRepeatedHeaderDates(pages) }
+    return { kind: 'cartao-ponto', pages: removeRepeatedHeaderDates(pages) }
   },
 }
 
@@ -207,11 +207,13 @@ function extractSiponPage(text: string, index: number): PageCartaoPonto {
           continue
         }
         const raw = time[0]
-        day.punches.push({
-          kind: day.punches.length % 2 === 0 ? 'IN' : 'OUT',
-          time_raw: raw,
-          time_hhmm: normalizeTime(raw),
-        })
+        day.punches.push(
+          Punch.from({
+            kind: day.punches.length % 2 === 0 ? 'IN' : 'OUT',
+            time_raw: raw,
+            time_hhmm: normalizeTime(raw),
+          }),
+        )
       } else {
         skipNextTime = true
       }
@@ -253,6 +255,6 @@ function buildSiponDay(day: SiponDay, month: number, year: number): DayRecord {
 
   return DayRecord.from({
     date_raw,
-    punches: day.punches.map((p) => Punch.from(p)),
+    punches: day.punches,
   })
 }

@@ -27,15 +27,10 @@ export class ExportSpreadsheetUseCase {
       throw new TranscriptionNotFoundError(input.id.value)
     }
     if (transcription.status !== TranscriptionStatus.CONCLUIDO || !transcription.value) {
-      throw new DomainError(
-        `transcrição ainda não concluída (status: ${transcription.status})`,
-      )
+      throw new DomainError(`transcrição ainda não concluída (status: ${transcription.status})`)
     }
 
-    const { headers, rows } = SpreadsheetBuilder.build(
-      transcription.value,
-      transcription.tipo,
-    )
+    const { headers, rows } = SpreadsheetBuilder.build(transcription.value)
     return this.generator.generate(input.formato, headers, rows)
   }
 }

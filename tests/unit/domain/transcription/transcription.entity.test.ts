@@ -45,7 +45,10 @@ describe('Transcription', () => {
       id: TranscriptionId.from('00000000-0000-4000-8000-000000000001'),
       tipo,
     })
-    const result = { pages: [PageCartaoPonto.from({ page: 1, days: [] })] }
+    const result = {
+      kind: 'cartao-ponto' as const,
+      pages: [PageCartaoPonto.from({ page: 1, days: [] })],
+    }
     t.complete(result)
     expect(t.status).toBe(TranscriptionStatus.CONCLUIDO)
     expect(t.value).toEqual(result)
@@ -56,7 +59,7 @@ describe('Transcription', () => {
       id: TranscriptionId.from('00000000-0000-4000-8000-000000000001'),
       tipo,
     })
-    t.complete({ pages: [PageCartaoPonto.from({ page: 1, days: [] })] })
+    t.complete({ kind: 'cartao-ponto', pages: [PageCartaoPonto.from({ page: 1, days: [] })] })
     const events = t.pullEvents()
     expect(events.some((e) => e.type === 'transcription.completed')).toBe(true)
   })
@@ -86,7 +89,7 @@ describe('Transcription', () => {
       tipo,
     })
     t.fail('timeout')
-    expect(() => t.complete({ pages: [] })).toThrow(/transição|status/)
+    expect(() => t.complete({ kind: 'cartao-ponto', pages: [] })).toThrow(/transição|status/)
   })
 
   it('rejeita transição CONCLUIDO → ERRO', () => {
@@ -94,7 +97,7 @@ describe('Transcription', () => {
       id: TranscriptionId.from('00000000-0000-4000-8000-000000000001'),
       tipo,
     })
-    t.complete({ pages: [] })
+    t.complete({ kind: 'cartao-ponto', pages: [] })
     expect(() => t.fail('x')).toThrow(/transição|status/)
   })
 
@@ -112,6 +115,7 @@ describe('Transcription', () => {
       tipo,
     })
     const original = {
+      kind: 'cartao-ponto' as const,
       pages: [
         PageCartaoPonto.from({
           page: 1,
@@ -121,6 +125,7 @@ describe('Transcription', () => {
     }
     t.complete(original)
     const corrigido = {
+      kind: 'cartao-ponto' as const,
       pages: [
         PageCartaoPonto.from({
           page: 1,
@@ -137,7 +142,7 @@ describe('Transcription', () => {
       id: TranscriptionId.from('00000000-0000-4000-8000-000000000001'),
       tipo,
     })
-    expect(() => t.updateValue({ pages: [] })).toThrow(/concluído|status/)
+    expect(() => t.updateValue({ kind: 'cartao-ponto', pages: [] })).toThrow(/concluído|status/)
   })
 
   it('rejeita updateValue quando em erro', () => {
@@ -146,6 +151,6 @@ describe('Transcription', () => {
       tipo,
     })
     t.fail('timeout')
-    expect(() => t.updateValue({ pages: [] })).toThrow(/concluído|status/)
+    expect(() => t.updateValue({ kind: 'cartao-ponto', pages: [] })).toThrow(/concluído|status/)
   })
 })

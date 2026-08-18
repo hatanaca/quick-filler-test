@@ -1,4 +1,3 @@
-import { DocumentType } from '../../transcription/value-objects/document-type.vo.js'
 import type {
   CartaoPontoResult,
   HoleriteResult,
@@ -77,8 +76,8 @@ function buildHolerite(result: HoleriteResult): BuiltSpreadsheet {
  * Holerite: lista vertical de verbas por página → matriz larga (uma coluna por verba).
  */
 export const SpreadsheetBuilder = {
-  build(result: TranscriptionResult, tipo: DocumentType): BuiltSpreadsheet {
-    if (tipo === DocumentType.CARTAO_PONTO) return buildCartaoPonto(result as CartaoPontoResult)
-    return buildHolerite(result as HoleriteResult)
+  build(result: TranscriptionResult): BuiltSpreadsheet {
+    if (result.kind === 'cartao-ponto') return buildCartaoPonto(result)
+    return buildHolerite(result)
   },
 }

@@ -14,13 +14,13 @@ function detectLayout(text: string): LayoutParser {
   const n = normalizeText(text)
   // A ficha financeira só traz o cabeçalho "FICHAFINANCEIRA" na 1ª página —
   // páginas seguintes são reconhecidas pelos rótulos/totais característicos.
+  // "basedecalculo" isolado é genérico — exige combinação com outro marcador.
   if (
     n.includes('fichafinanceira') ||
     n.includes('folhanormal') ||
     n.includes('totrendimentos') ||
     n.includes('salarioliquidonomes') ||
-    n.includes('basedecalculo') ||
-    n.includes('remuneracaomes')
+    (n.includes('basedecalculo') && n.includes('remuneracaomes'))
   ) {
     return parseFichaFinanceira
   }

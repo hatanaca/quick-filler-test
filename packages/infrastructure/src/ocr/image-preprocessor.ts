@@ -176,8 +176,6 @@ function sauvolaThreshold(data: Uint8ClampedArray, width: number, height: number
 
   // Janela local (metade do lado); R = 128 (desvio padrão típico de cinza).
   const r = 15
-  const window = r * 2 + 1
-  const windowArea = window * window
   const k = 0.5
   const R = 128
 
@@ -201,8 +199,9 @@ function sauvolaThreshold(data: Uint8ClampedArray, width: number, height: number
       const d2 = integralSq[(y2 + 1) * (w + 1) + x2 + 1] ?? 0
       const sumSq = d2 - b2 - c2 + a2
 
-      const mean = sum / windowArea
-      const variance = sumSq / windowArea - mean * mean
+      const area = (y2 - y1 + 1) * (x2 - x1 + 1)
+      const mean = sum / area
+      const variance = sumSq / area - mean * mean
       const std = Math.sqrt(Math.max(0, variance))
       const threshold = mean * (1 + k * (std / R - 1))
 

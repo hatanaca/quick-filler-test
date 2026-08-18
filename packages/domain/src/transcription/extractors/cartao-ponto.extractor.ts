@@ -15,7 +15,10 @@ const CELL_TIME_RE = /^[0-9?]{1,2}:[0-9?]{2}$/
 function normalizeTime(raw: string): string {
   const [hour, minute] = raw.split(':')
   if (!hour || !minute) return raw
-  return `${hour.padStart(2, '0')}:${minute}`
+  const normalized = `${hour.padStart(2, '0')}:${minute}`
+  const h = Number(hour.replace('?', '0'))
+  if (h > 23) return '??:??'
+  return normalized
 }
 
 const SIPON_MES_ANO_RE = /Mes\/Ano\s*:\s*(\d{1,2})\s*\/\s*(\d{4})/
@@ -34,10 +37,16 @@ interface SiponDay {
 /** Normaliza "18:15" e "1815" (OCR sem o ":") → "18:15". */
 function normalizeRangeTime(raw: string): string {
   const t = raw.trim()
-  if (/^\d{1,2}:\d{2}$/.test(t)) return normalizeTime(t)
+  if (/^\d{1,2}:\d{2}$/.test(t)) {
+    const normalized = normalizeTime(t)
+    const [hour] = normalized.split(':')
+    if (Number(hour) > 23) return '??:??'
+    return normalized
+  }
   if (/^\d{3,4}$/.test(t)) {
     const hour = t.length === 4 ? t.slice(0, 2) : t.slice(0, 1)
     const minute = t.slice(-2)
+    if (Number(hour) > 23) return '??:??'
     return `${hour.padStart(2, '0')}:${minute}`
   }
   return t
@@ -109,7 +118,8 @@ function extractBancoDoBrasilPage(text: string, index: number): PageCartaoPonto 
   let year = 0
   const m = BB_MES_ANO_RE.exec(text)
   if (m) {
-    month = Number(m[1])
+    const parsed = Number(m[1])
+    month = parsed >= 1 && parsed <= 12 ? parsed : 0
     year = Number(m[2])
   }
 
@@ -168,7 +178,8 @@ function extractSiponPage(text: string, index: number): PageCartaoPonto {
   for (const line of text.split('\n')) {
     const match = SIPON_MES_ANO_RE.exec(line)
     if (match) {
-      month = Number(match[1])
+      const parsed = Number(match[1])
+      month = parsed >= 1 && parsed <= 12 ? parsed : 0
       year = Number(match[2])
       break
     }

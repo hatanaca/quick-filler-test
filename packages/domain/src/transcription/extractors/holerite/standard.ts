@@ -23,7 +23,10 @@ const BASE_LABELS = [
 export function parseStandard(text: string, pageIndex: number): PageHolerite[] {
   const competenceMatch = text.match(COMPETENCIA_RE)
   const year = competenceMatch?.[2] ?? '????'
-  const month = competenceMatch?.[1] ?? '0?'
+  const rawMonth = competenceMatch?.[1] ?? '0?'
+  const monthNum = Number(rawMonth)
+  const month =
+    rawMonth.includes('?') || (monthNum >= 1 && monthNum <= 12) ? rawMonth.padStart(2, '0') : '0?'
 
   const fields: PayrollField[] = []
   const bases: PayrollBase[] = []

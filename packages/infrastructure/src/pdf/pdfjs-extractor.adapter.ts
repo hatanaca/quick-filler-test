@@ -81,7 +81,7 @@ export class PdfJsExtractorAdapter implements PdfExtractorPort {
             line += x - prevEnd > COLUMN_GAP_THRESHOLD ? '\t' : ' '
           }
           line += str
-          prevEnd = x + (item.width ?? 0)
+          prevEnd = x + (item.width ?? item.str.length * 6)
         }
         return line
       })

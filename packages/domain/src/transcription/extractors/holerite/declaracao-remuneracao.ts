@@ -3,7 +3,7 @@ import { PayrollBase } from '../../value-objects/payroll-base.vo.js'
 import { PayrollField } from '../../value-objects/payroll-field.vo.js'
 import { cellsOf, stripSign } from './money.js'
 
-const MES_ANO_RE = /M[eê]s\/Ano\s*:\s*(\d{2})\/(\d{4})/
+const MES_ANO_RE = /M[eê]s\/Ano\s*:\s*(\d{2})\/(\d{4})/i
 
 /** Bases do rodapé: "Proventos Bruto: 6.188,63", "Provisão FGTS: 495,09", ... */
 const BASE_LABEL_RE =
@@ -48,9 +48,11 @@ export function parseDeclaracaoRemuneracao(text: string, pageIndex: number): Pag
     const mesAno = MES_ANO_RE.exec(line)
     if (mesAno && /Folha de Pagamento/i.test(line)) {
       flush()
+      const rawMonth = mesAno[1] ?? '0?'
+      const monthNum = Number(rawMonth)
       current = {
         year: mesAno[2] ?? '????',
-        month: mesAno[1] ?? '0?',
+        month: rawMonth.includes('?') || (monthNum >= 1 && monthNum <= 12) ? rawMonth : '0?',
         fields: [],
         bases: [],
       }

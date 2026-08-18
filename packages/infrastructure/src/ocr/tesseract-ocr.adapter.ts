@@ -49,48 +49,96 @@ export class TesseractOcrAdapter implements OcrEnginePort {
   /**
    * Reconstrói o texto substituindo caracteres com baixa confiança por `?`.
    * A regra do desafio: "quando um caractere não deu para ler com segurança,
-   * use ? no lugar dele". Tesseract v7 fornece `data.symbols` com confiança
-   * por caractere — mapeamos para o texto honesto.
+   * use ? no lugar dele". Tesseract.js fornece symbols no nível de Word
+   * (data.blocks[i].paragraphs[j].lines[k].words[l].symbols[m]), não no
+   * nível de Page — iteramos a hierarquia completa para acessar confiança
+   * por caractere.
    */
-  private buildHonestText(data: {
-    text: string
-    symbols?: Array<{
-      text: string
-      confidence: number
-      bbox?: { x0: number; y0: number; x1: number; y1: number }
-    }>
-  }): string {
-    if (!data.symbols || data.symbols.length === 0) {
+  private buildHonestText(data: { text: string }): string {
+    const symbols = this.extractAllSymbols(data)
+    if (symbols.length === 0) {
       return data.text
     }
 
     let result = ''
-    let prevY = 0
+    let prevY: number | null = null
 
-    for (const symbol of data.symbols) {
+    for (const symbol of symbols) {
+      const text = symbol.text ?? ''
+      if (!text) continue
+
       // Espaços/novas linhas: preservar estrutura do documento.
-      if (symbol.text === ' ' || symbol.text === '\n' || symbol.text === '\r') {
-        result += symbol.text
-        prevY = symbol.bbox?.y0 ?? 0
+      if (text === ' ' || text === '\n' || text === '\r') {
+        result += text
+        if (symbol.bbox?.y0 !== null && symbol.bbox?.y0 !== undefined) prevY = symbol.bbox.y0
         continue
       }
 
       // Se há salto vertical significativo (nova linha), inserir \n.
-      const y = symbol.bbox?.y0 ?? 0
-      if (Math.abs(y - prevY) > 10) {
+      const y = symbol.bbox?.y0 ?? null
+      if (y !== null && prevY !== null && Math.abs(y - prevY) > 10) {
         result += '\n'
       }
-      prevY = y
+      if (y !== null) prevY = y
 
-      if (symbol.confidence < this.confidenceThreshold) {
+      const confidence = symbol.confidence ?? 100
+      if (confidence < this.confidenceThreshold) {
         // Símbolo incerto: trocar por `?` (incerteza por caractere).
-        result += symbol.text.replace(/[^?\n\r]/g, '?')
+        result += text.replace(/[^?\n\r]/g, '?')
       } else {
-        result += symbol.text
+        result += text
       }
     }
 
     return result
+  }
+
+  /**
+   * Extrai todos os symbols da hierarquia Tesseract:
+   * data.blocks -> block.paragraphs -> paragraph.lines -> line.words -> word.symbols
+   */
+  private extractAllSymbols(data: { text: string }): Array<{
+    text: string
+    confidence: number
+    bbox?: { x0: number; y0: number; x1: number; y1: number }
+  }> {
+    const symbols: Array<{
+      text: string
+      confidence: number
+      bbox?: { x0: number; y0: number; x1: number; y1: number }
+    }> = []
+
+    const blocks = (data as Record<string, unknown>)['blocks'] as
+      | Array<{
+          paragraphs?: Array<{
+            lines?: Array<{
+              words?: Array<{
+                symbols?: Array<{
+                  text: string
+                  confidence: number
+                  bbox?: { x0: number; y0: number; x1: number; y1: number }
+                }>
+              }>
+            }>
+          }>
+        }>
+      | undefined
+
+    if (!blocks) return symbols
+
+    for (const block of blocks) {
+      for (const paragraph of block.paragraphs ?? []) {
+        for (const line of paragraph.lines ?? []) {
+          for (const word of line.words ?? []) {
+            for (const symbol of word.symbols ?? []) {
+              symbols.push(symbol)
+            }
+          }
+        }
+      }
+    }
+
+    return symbols
   }
 
   async close(): Promise<void> {

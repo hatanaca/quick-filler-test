@@ -1,19 +1,28 @@
 #!/bin/bash
 # Deploy script for Quick Filler to production server
-# Usage: ./scripts/deploy.sh [user@host]
+# Usage: ./scripts/deploy.sh user@host
+#
+# Required environment variables:
+#   DEPLOY_SERVER - SSH target (e.g., user@host)
 #
 # Architecture:
-#   Internet → 200.158.242.69:5170 (Gateway SSL)
-#            → 192.168.15.83:5173 (nginx frontend)
+#   Internet → <gateway-ip>:5170 (Gateway SSL)
+#            → <server-ip>:5173 (nginx frontend)
 #            → backend:3001 (API)
 
 set -e
 
-SERVER=${1:-"root@192.168.15.83"}
+SERVER=${1:-$DEPLOY_SERVER}
+if [ -z "$SERVER" ]; then
+  echo "❌ Error: Deploy server not specified."
+  echo "Usage: ./scripts/deploy.sh user@host"
+  echo "Or set DEPLOY_SERVER environment variable."
+  exit 1
+fi
+
 APP_DIR="/opt/quick-filler-test"
 
 echo "🚀 Iniciando deploy para $SERVER"
-echo "   Gateway: 200.158.242.69:5170 → $SERVER:5173"
 
 # Build locally first to verify
 echo "📦 Building locally..."
@@ -68,9 +77,7 @@ EOF
 echo ""
 echo "✅ Deploy concluído!"
 echo ""
-echo "🌐 Acesso externo: https://200.158.242.69 (via gateway porta 5170)"
-echo "🌐 Acesso local: http://192.168.15.83:5173"
-echo ""
-echo "Credenciais de teste:"
-echo "  Admin: admin@quickfiller.com / admin123"
-echo "  User:  user@quickfiller.com / user123"
+echo "📋 Próximos passos:"
+echo "   1. Verificar .env no servidor com as credenciais corretas"
+echo "   2. Acessar via gateway na porta 5170"
+echo "   3. Credenciais estão no .env do servidor (ADMIN_EMAIL, ADMIN_PASSWORD)"

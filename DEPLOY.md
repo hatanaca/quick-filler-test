@@ -3,26 +3,26 @@
 ## Arquitetura de Deploy
 
 ```
-Internet → 200.158.242.69:5170 (Gateway SSL)
-         → 192.168.15.83:5173 (nginx frontend)
+Internet → <gateway-ip>:5170 (Gateway SSL)
+         → <server-ip>:5173 (nginx frontend)
          → backend:3001 (API)
 ```
 
-- **Gateway**: Escuta na porta 5170, termina SSL, redireciona para 192.168.15.83:5173
+- **Gateway**: Escuta na porta 5170, termina SSL, redireciona para o servidor
 - **nginx**: Frontend estático + proxy para API
 - **Backend**: API Fastify
 
 ## Pré-requisitos
 
 - Docker e Docker Compose instalados
-- Gateway configurado na porta 5170 → 192.168.15.83:5173
+- Gateway configurado na porta 5170 → servidor:5173
 
 ## Passos para Deploy
 
-### 1. Conectar ao servidor (192.168.15.83)
+### 1. Conectar ao servidor
 
 ```bash
-ssh usuario@192.168.15.83
+ssh usuario@<server-ip>
 ```
 
 ### 2. Clonar ou atualizar o repositório
@@ -50,13 +50,13 @@ nano .env
 
 ```bash
 # IP público (gateway)
-DOMAIN=200.158.242.69
+DOMAIN=<gateway-ip>
 
 # CORS deve usar HTTPS (via gateway)
-CORS_ORIGIN=https://200.158.242.69
+CORS_ORIGIN=https://<gateway-ip>
 
 # API URL deve usar HTTPS (via gateway)
-VITE_API_URL=https://200.158.242.69/filler/api
+VITE_API_URL=https://<gateway-ip>/filler/api
 
 # Gerar secret forte para JWT
 JWT_SECRET=$(openssl rand -base64 32)
@@ -88,7 +88,7 @@ docker compose logs -f backend
 curl http://localhost:5173/healthz
 
 # Testar via gateway
-curl -k https://200.158.242.69/healthz
+curl -k https://<gateway-ip>/healthz
 ```
 
 ### 6. Verificar porta 5173
@@ -136,7 +136,7 @@ USER_PASSWORD=<senha-forte>
 ### Gateway não acessível
 
 1. Verificar se o gateway está escutando na porta 5170
-2. Verificar se o gateway está redirecionando para 192.168.15.83:5173
+2. Verificar se o gateway está redirecionando para o servidor na porta 5173
 3. Verificar firewall do servidor
 
 ### Backend não inicia

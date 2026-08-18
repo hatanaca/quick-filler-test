@@ -45,6 +45,14 @@ Thumbs.db
 # Test artifacts
 tests/artifacts/
 tests/fixtures/uploads-tmp/
+playwright-report/
+test-results/
+
+# Playwright / screenshots output
+output/
+
+# OCR trained data (large binary)
+*.traineddata
 
 # Misc
 .cache/

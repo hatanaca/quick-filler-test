@@ -43,7 +43,18 @@ export class TesseractOcrAdapter implements OcrEnginePort {
     const processed = await preprocessImage(imageBuffer, this.preprocessMode)
     const worker = await this.getWorker()
     const { data } = await worker.recognize(processed)
-    return this.buildHonestText(data)
+    const text = this.buildHonestText(data)
+
+    // Se o modo 'auto'/'grayscale' não extraiu texto útil, tenta 'color'
+    // (carimbos vermelhos em fundo branco, ex: time-card-04).
+    if (text.trim().length < 10 && this.preprocessMode !== 'color') {
+      const colorProcessed = await preprocessImage(imageBuffer, 'color')
+      const { data: colorData } = await worker.recognize(colorProcessed)
+      const colorText = this.buildHonestText(colorData)
+      if (colorText.trim().length > text.trim().length) return colorText
+    }
+
+    return text
   }
 
   /**

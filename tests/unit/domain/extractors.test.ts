@@ -106,6 +106,48 @@ describe('CartaoPontoExtractor', () => {
     expect(result.pages).toHaveLength(2)
     expect(result.pages[1]?.page).toBe(2)
   })
+
+  it('ignora linhas de cabeçalho com keywords (Funcionário, Matrícula, etc.)', () => {
+    const text = [
+      'Funcionário: João da Silva',
+      'Matrícula: 001234',
+      'Período: 05/2019',
+      'Referência: 01/01/2024 a 31/01/2024',
+      '21/05/2019 08:00 18:00',
+    ].join('\n')
+    const result = CartaoPontoExtractor.extract([text])
+    expect(cartaoDays(result)).toHaveLength(1)
+    expect(cartaoDays(result)[0]?.date_raw).toBe('21/05/2019')
+  })
+
+  it('ignora linhas com keywords de tabela (Entrada, Saída, Descrição)', () => {
+    const text = [
+      'Código Descrição Entrada Saída',
+      'DIA ENTRADA SAÍDA ENTRADA SAÍDA',
+      '21/05/2019 08:00 18:00',
+    ].join('\n')
+    const result = CartaoPontoExtractor.extract([text])
+    expect(cartaoDays(result)).toHaveLength(1)
+  })
+
+  it('rejeita data inválida (mês 13)', () => {
+    const text = '15/13/2019 08:00 18:00'
+    const result = CartaoPontoExtractor.extract([text])
+    expect(cartaoDays(result)).toHaveLength(0)
+  })
+
+  it('rejeita data inválida (dia 32)', () => {
+    const text = '32/05/2019 08:00 18:00'
+    const result = CartaoPontoExtractor.extract([text])
+    expect(cartaoDays(result)).toHaveLength(0)
+  })
+
+  it('aceita data com incerteza (?)', () => {
+    const text = '2?/05/2019 08:00 18:00'
+    const result = CartaoPontoExtractor.extract([text])
+    expect(cartaoDays(result)).toHaveLength(1)
+    expect(cartaoDays(result)[0]?.date_raw).toBe('2?/05/2019')
+  })
 })
 
 describe('HoleriteExtractor', () => {

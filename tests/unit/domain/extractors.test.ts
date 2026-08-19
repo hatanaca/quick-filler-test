@@ -107,27 +107,22 @@ describe('CartaoPontoExtractor', () => {
     expect(result.pages[1]?.page).toBe(2)
   })
 
-  it('ignora linhas de cabeçalho com keywords (Funcionário, Matrícula, etc.)', () => {
+  it('preserva linhas de dados que contenham keywords (entrada, saída, etc.)', () => {
     const text = [
       'Funcionário: João da Silva',
       'Matrícula: 001234',
-      'Período: 05/2019',
-      'Referência: 01/01/2024 a 31/01/2024',
-      '21/05/2019 08:00 18:00',
-    ].join('\n')
-    const result = CartaoPontoExtractor.extract([text])
-    expect(cartaoDays(result)).toHaveLength(1)
-    expect(cartaoDays(result)[0]?.date_raw).toBe('21/05/2019')
-  })
-
-  it('ignora linhas com keywords de tabela (Entrada, Saída, Descrição)', () => {
-    const text = [
-      'Código Descrição Entrada Saída',
       'DIA ENTRADA SAÍDA ENTRADA SAÍDA',
       '21/05/2019 08:00 18:00',
+      '22/05/2019 08:00 18:00 ENTRADA extra',
+      '23/05/2019 08:00 18:00 referência sistema',
     ].join('\n')
     const result = CartaoPontoExtractor.extract([text])
-    expect(cartaoDays(result)).toHaveLength(1)
+    // Linhas sem data (cabeçalho) são ignoradas; linhas com data+horário são extraídas
+    // mesmo que contenham keywords — são linhas de dados legítimas.
+    expect(cartaoDays(result)).toHaveLength(3)
+    expect(cartaoDays(result)[0]?.date_raw).toBe('21/05/2019')
+    expect(cartaoDays(result)[1]?.date_raw).toBe('22/05/2019')
+    expect(cartaoDays(result)[2]?.date_raw).toBe('23/05/2019')
   })
 
   it('rejeita data inválida (mês 13)', () => {

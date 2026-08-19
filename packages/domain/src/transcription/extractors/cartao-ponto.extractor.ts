@@ -11,10 +11,6 @@ const TIME_RE = /([0-9?]{1,2}:[0-9?]{2})/g
 /** Célula inteira que é um horário (colunas Entrada/Saída/Qtde do SIPON). */
 const CELL_TIME_RE = /^[0-9?]{1,2}:[0-9?]{2}$/
 
-/** Linha de cabeçalho/título que deve ser ignorada pelo extrator padrão. */
-const HEADER_KEYWORDS_RE =
-  /\b(funcionario|funcion[aá]rio|matr[uú]cula|periodo|per[ií]odo|refer[eê]ncia|compet[eê]ncia|codigo|c[oó]digo|descricao|descri[cç][aã]o|entrada|sa[ií]da|cabecalho|cabe[cç]alho|cart[aã]o|ponto|frequencia|frequ[eê]ncia|folha|relat[oó]rio|nome|empresa|cnpj|cpf|cargo|setor|departamento)\b/i
-
 /** Valida se uma string é uma data dd/mm/yyyy plausível (dia 1-31, mês 1-12). */
 function isValidDate(raw: string): boolean {
   if (raw.includes('?')) return true // incerteza é aceita
@@ -169,9 +165,6 @@ function extractBancoDoBrasilPage(text: string, index: number): PageCartaoPonto 
 function extractStandardPage(text: string, index: number): PageCartaoPonto {
   const days: DayRecord[] = []
   for (const line of text.split('\n')) {
-    // Ignora linhas de cabeçalho/título que contenham keywords típicas.
-    if (HEADER_KEYWORDS_RE.test(line)) continue
-
     const dateMatch = line.match(DATE_RE)
     if (!dateMatch) continue
 

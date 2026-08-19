@@ -3,16 +3,16 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString()
+// Worker do pdfjs-dist: usa ?url para que Vite resolva o caminho corretamente
+// em dev e produção (new URL(..., import.meta.url) pode falhar em lazy chunks).
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl
 
 export function PdfViewerInner({ file }: { file: File }) {
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
   const [url, setUrl] = useState<string | null>(null)
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
@@ -20,12 +20,12 @@ export function PdfViewerInner({ file }: { file: File }) {
     setUrl(next)
     setPageNumber(1)
     setNumPages(0)
-    setLoadError(false)
+    setLoadError(null)
     return () => URL.revokeObjectURL(next)
   }, [file])
 
   function handleRetry() {
-    setLoadError(false)
+    setLoadError(null)
     setRetryKey((k) => k + 1)
   }
 
@@ -59,6 +59,7 @@ export function PdfViewerInner({ file }: { file: File }) {
             className="flex h-full flex-col items-center justify-center gap-3 text-center"
           >
             <p className="text-sm text-red-600">Não foi possível carregar o PDF.</p>
+            <p className="text-xs text-gray-500">{loadError}</p>
             <button
               onClick={handleRetry}
               className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
@@ -72,9 +73,11 @@ export function PdfViewerInner({ file }: { file: File }) {
             file={url ?? undefined}
             onLoadSuccess={({ numPages: n }) => {
               setNumPages(n)
-              setLoadError(false)
+              setLoadError(null)
             }}
-            onLoadError={() => setLoadError(true)}
+            onLoadError={(error: Error) =>
+              setLoadError(error?.message || 'Erro desconhecido ao carregar PDF')
+            }
             className="mx-auto"
           >
             <Page pageNumber={pageNumber} renderTextLayer renderAnnotationLayer width={480} />

@@ -66,7 +66,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
         frameSrc: ["'none'"],
         connectSrc: ["'self'"], // API calls
         workerSrc: ["'self'", 'blob:'], // Required for PDF.js worker
-        childSrc: ["'self'"],
+        childSrc: ["'self'", 'blob:'], // Required for PDF.js worker
         formAction: ["'self'"],
         upgradeInsecureRequests: deps.config.nodeEnv === 'production' ? [] : null,
       },

@@ -1,5 +1,6 @@
 import type { ExportFormat } from '../types'
 import { authenticatedFetch } from '../api/auth'
+import { BASE_URL } from '../api/config'
 
 interface DownloadButtonProps {
   id: string
@@ -19,7 +20,9 @@ function ext(formato: ExportFormat): string {
 
 export function DownloadButton({ id }: DownloadButtonProps) {
   async function handleDownload(formato: ExportFormat) {
-    const response = await authenticatedFetch(`/api/transcricoes/${id}/planilha?formato=${formato}`)
+    const response = await authenticatedFetch(
+      `${BASE_URL}/api/transcricoes/${id}/planilha?formato=${formato}`,
+    )
     if (!response.ok) return
     const blob = await response.blob()
     const url = URL.createObjectURL(blob)

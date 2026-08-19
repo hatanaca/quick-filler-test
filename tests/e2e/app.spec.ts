@@ -19,9 +19,9 @@ test.describe('Quick Filler App', () => {
   test('upload form is visible', async ({ page }) => {
     await page.goto('/')
 
-    // Log in with test credentials
-    await page.getByLabel('Email').fill('admin@quickfiller.com')
-    await page.getByLabel('Senha').fill('admin123')
+    // Log in with credentials from environment variables
+    await page.getByLabel('Email').fill(process.env.ADMIN_EMAIL || 'admin@quickfiller.com')
+    await page.getByLabel('Senha').fill(process.env.ADMIN_PASSWORD || 'admin123')
     await page.getByRole('button', { name: 'Entrar' }).click()
 
     // Look for upload area or button
@@ -36,9 +36,9 @@ test.describe('Quick Filler App', () => {
   test('can navigate to the app', async ({ page }) => {
     await page.goto('/')
 
-    // Log in with test credentials
-    await page.getByLabel('Email').fill('admin@quickfiller.com')
-    await page.getByLabel('Senha').fill('admin123')
+    // Log in with credentials from environment variables
+    await page.getByLabel('Email').fill(process.env.ADMIN_EMAIL || 'admin@quickfiller.com')
+    await page.getByLabel('Senha').fill(process.env.ADMIN_PASSWORD || 'admin123')
     await page.getByRole('button', { name: 'Entrar' }).click()
 
     // Wait for the page to be fully loaded

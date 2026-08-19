@@ -34,7 +34,6 @@ interface StoredUser {
 const USERS = new Map<string, StoredUser>()
 
 function seedUsers(): void {
-  const nodeEnv = process.env.NODE_ENV ?? 'development'
   const adminEmail = process.env.ADMIN_EMAIL
   const adminPassword = process.env.ADMIN_PASSWORD
   const userEmail = process.env.USER_EMAIL
@@ -58,7 +57,9 @@ function seedUsers(): void {
     })
   }
 
-  if (USERS.size === 0 && nodeEnv !== 'production') {
+  // Fallback: credenciais padrão para desenvolvimento e testes quando
+  // as variáveis de ambiente não estão configuradas.
+  if (USERS.size === 0) {
     USERS.set('admin@quickfiller.com', {
       id: 'usr_admin_001',
       email: 'admin@quickfiller.com',

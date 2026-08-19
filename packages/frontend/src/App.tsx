@@ -72,19 +72,30 @@ export default function App() {
             {transcricao?.status === 'erro' && (
               <div
                 role="alert"
-                className="mb-4 rounded border border-red-200 bg-red-50 p-4 text-red-800"
+                className="mb-4 rounded border-2 border-red-400 bg-red-50 p-6 shadow-md"
               >
-                <p className="font-medium">Não foi possível transcrever</p>
-                <p className="mt-1 text-sm">{transcricao.erro}</p>
-                <button
-                  onClick={() => {
-                    setId(null)
-                    setPdfFile(null)
-                  }}
-                  className="mt-3 rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
-                >
-                  Enviar outro documento
-                </button>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-2xl text-red-600" aria-hidden="true">
+                    &#x26A0;
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-bold text-red-800">
+                      Não foi possível transcrever o documento
+                    </p>
+                    <p className="mt-2 text-sm text-red-700">{transcricao.erro}</p>
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        onClick={() => {
+                          setId(null)
+                          setPdfFile(null)
+                        }}
+                        className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                      >
+                        Enviar outro documento
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -118,6 +129,16 @@ export default function App() {
                         !
                       </span>
                       <span>Não foi possível salvar: {saveErro}</span>
+                    </div>
+                  )}
+                  {(!transcricao.value?.pages || transcricao.value.pages.length === 0) && (
+                    <div className="mb-4 rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                      <p className="font-medium">Nenhum dado foi extraído deste documento.</p>
+                      <p className="mt-1">
+                        O PDF pode conter apenas imagens escaneadas sem texto embutido, ou o
+                        conteúdo não foi reconhecido. Tente enviar outro arquivo ou verifique se o
+                        PDF contém texto selecionável.
+                      </p>
                     </div>
                   )}
                   <ReviewTable key={id} transcricao={transcricao} onChange={handleChange} />

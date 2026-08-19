@@ -5,13 +5,13 @@ import type { FastifyInstance } from 'fastify'
  * In tests, we use the dev secret to generate tokens.
  */
 export async function getTestToken(app: FastifyInstance): Promise<string> {
-  // Login with test user
+  // Login with credentials from environment variables
   const loginResponse = await app.inject({
     method: 'POST',
     url: '/api/auth/login',
     payload: {
-      email: 'admin@quickfiller.com',
-      password: 'admin123',
+      email: process.env.ADMIN_EMAIL || 'admin@quickfiller.com',
+      password: process.env.ADMIN_PASSWORD || 'admin123',
     },
   })
 

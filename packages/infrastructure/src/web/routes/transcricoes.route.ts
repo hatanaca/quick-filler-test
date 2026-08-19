@@ -99,11 +99,18 @@ export function registerTranscriptionRoutes(
         reply.status(202)
         await reply.send({ id: id.value })
 
-        try {
-          await deps.processTranscription.execute(TranscriptionId.from(id.value))
-        } catch (error) {
-          app.log.error(error, `falha ao processar transcrição ${id.value}`)
-        }
+        // Processamento em background: liberar o slot da fila imediatamente
+        // para não bloquear outras requisições do mesmo IP. O processamento
+        // roda em setImmediate para que o event loop volte ao handler antes
+        // de iniciar o trabalho pesado (OCR, renderização de PDF).
+        const transcriptionId = TranscriptionId.from(id.value)
+        setImmediate(async () => {
+          try {
+            await deps.processTranscription.execute(transcriptionId)
+          } catch (error) {
+            app.log.error(error, `falha ao processar transcrição ${id.value}`)
+          }
+        })
       })
     },
   )

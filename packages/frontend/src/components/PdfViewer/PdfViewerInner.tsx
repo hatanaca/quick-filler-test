@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
-import 'react-pdf/dist/Page/TextLayer.css'
-import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/esm/Page/TextLayer.css'
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 
 // Worker do pdfjs-dist: usa ?url para que Vite resolva o caminho corretamente
 // em dev e produção (new URL(..., import.meta.url) pode falhar em lazy chunks).

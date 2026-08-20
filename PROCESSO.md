@@ -1,104 +1,37 @@
 # PROCESSO.md — Como conduzi o desafio
 
-## Ferramentas usadas e para quê
+## Ferramentas usadas
 
-| Ferramenta              | Uso                                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| MiMoCode (agente CLI)   | Desenvolvimento assistido em todas as etapas: scaffolding, TDD, infraestrutura, Docker, documentação |
-| Tesseract.js            | OCR dos documentos escaneados                                                                        |
-| pdfjs-dist              | Extração de texto embutido e renderização de páginas                                                 |
-| ExcelJS                 | Geração de planilhas xlsx com estilos (cabeçalho `#173772`, destaques)                               |
-| Fastify + plugins       | API HTTP, helmet, CORS, rate limit, multipart, compress                                              |
-| Vitest                  | Testes unitários (TDD), de integração e E2E                                                          |
-| TypeScript strict       | Tipagem em toda a base                                                                               |
-| ESLint + Prettier       | Padrão de código consistente                                                                         |
-| Docker + docker-compose | Imagem multi-stage e orquestração                                                                    |
+O desenvolvimento foi feito com o MiMoCode (agente CLI), desde o scaffolding até testes, Docker e documentação. As demais ferramentas: Tesseract.js para OCR local, pdfjs-dist para extração de texto dos PDFs, ExcelJS para geração de planilhas, Fastify + TypeScript strict no backend, React + Vite no frontend.
 
-## Pontos em que o agente errou ou pegou o caminho errado
+Sobre o ZOD: o agente sugeriu para validação de schemas, e eu já tinha experiência com a lib. Pesquisando, vi que o ZOD tem mais impacto em cenários de alto volume de requisições — num projeto de processamento simples como este, o ganho não seria significativo. Optei por não usar.
 
-1. **Mensagens de erro sem o nome do campo.** Os testes exigiam que a
-   mensagem de erro contivesse o nome do campo (`/value/`, `/id/`), mas o
-   agente gerou mensagens genéricas ("Valor monetário em formato inválido").
-   Percebi porque os testes falhavam com "expected to throw matching /value/".
-   Corrigi as mensagens para incluir o campo e o motivo.
-   → Lição: **o teste é a especificação**; a mensagem de erro também.
+## Supervisão do processo
 
-2. **Erro de indexação nos testes do WarningCalculator.** O agente escreveu
-   testes assumindo `warnings[1]` (índice do array de avisos) como se fosse o
-   índice do dia, mas o array só contém dias com aviso. Os testes falhavam
-   com "undefined". Diagnostiquei rodando isolado e corrigi para
-   `warnings.find(w => w.index === 1)`.
-   → Lição: nunca assumir que índice do resultado = índice da entrada.
+Não escrevi trechos de código manualmente, mas acompanhei e vistoriei toda a construção. Minha atuação foi mais como revisor: verificando valores hardcoded, garantindo que middlewares de segurança fossem implementados, e orientando o agente quando ele tomava decisões inadequadas.
 
-3. **Semântica invertida da "cadeia" de datas.** Inicialmente o agente
-   interpretou "data ilegível não quebra a cadeia" como "a próxima data
-   legível não é comparada com a anterior". Reli o enunciado:
-   "páginas cuja competência não deu para ler não quebram a cadeia,
-   comparam-se as próximas legíveis entre si" — ou seja, a próxima legível
-   DEVE comparar com a anterior legível. Corrigi os testes e documentei a
-   regra em ARCHITECTURE.md.
-   → Lição: reler o enunciado literal antes de corrigir o código.
+Um ponto recorrente era o agente centralizar código demais em arquivos centrais, criando sobrecarga. Havia duplicação de lógica entre use cases diferentes. Migrei esse código repetido para utils e ajustei o processo para manter a separação.
 
-4. **Fastify v5: `logger` vs `loggerInstance`.** O agente passou uma
-   instância pino em `logger` e o Fastify recusou ("logger options only
-   accepts a configuration object"). Depois, ao usar `loggerInstance`, a
-   inferência de tipos quebrou o generic do servidor. Solução: passar
-   opções em `logger` com cast explícito.
-   → Lição: verificar a versão da API (v5 mudou) em vez de assumir a v4.
+Também foi necessário pedir explicitamente para o agente adotar boas práticas de git — especialmente o .gitignore e o cuidado de não commitar arquivos sensíveis como uploads, .env e dados pessoais.
 
-5. **pdfjs v6 mudou a API** (`destroy` na loading task, `canvas` obrigatório
-   no render) e havia **duas versões do pacote** no tree (4.8.69 do react-pdf
-   vs 6.2.108 do backend) — o typecheck resolvia para a errada. Corrigi
-   alinhando versões e adaptando o adapter.
-   → Lição: `npm ls` antes de culpar o código.
-
-## O que reescrevi à mão e por quê
-
-- **WarningCalculator**: a lógica de cadeia (último legível) foi reescrita
-  por mim após o erro #3, com os casos dez→jan e competência ilegível.
-- **ReviewTable (frontend)**: a primeira versão gerada pelo agente tinha
-  edição desconexa (mutava um clone descartado). Reescrevi com edição
-  explícita célula → value → PUT.
-- **Extractors**: refinei manualmente o regex do cartão (`?` no horário) e o
-  parsing do holerite (value = último money, label sem código e sem `-`).
+Durante os testes, percebi que a aplicação estava com baixa performance no processamento. A solução foi utilizar uma pool de workers para o OCR, com concorrência configurável — as páginas escaneadas são processadas em paralelo com limite de threads, evitando que o Tesseract estoure a memória.
 
 ## Perguntas obrigatórias
 
-### 1. Cite 3 decisões em que havia mais de uma resposta razoável. Por que escolheu essa?
+### 1. Cite 3 decisões em que havia mais de uma resposta razoável
 
-1. **Tesseract local vs serviço de nuvem (Google Vision/AWS Textract).**
-   Escolhi Tesseract: sem custo, sem API key (não há segredo no repo), roda
-   offline no Docker e mantém o pipeline autocontido. O custo é precisão
-   menor em digitalizações ruins — aceitei em troca de uma entrega que
-   funciona sem credenciais.
+**Tesseract local vs serviço de nuvem.** Poderia ter usado Google Vision ou AWS Textract, com melhor precisão. Escolhi Tesseract porque não tem custo, não precisa de API key e roda offline no Docker. A precisão é menor em digitalizações ruins, mas a entrega funciona sem credenciais externas.
 
-2. **Polling (2s) vs SSE/WebSocket para o status.**
-   O contrato tem um único endpoint de status e o processamento é curto;
-   polling é trivial, funciona atrás de qualquer proxy e não mantém conexões.
-   SSE exigiria mais infraestrutura sem ganho para o avaliador.
+**Banco em memória vs banco relacional.** A retenção é curta (60 minutos) e o fluxo inteiro vive dentro de um ciclo de request. Um banco adicionaria complexidade sem valor real para a avaliação. A interface (port) está pronta para trocar sem alterar o domínio.
 
-3. **Repositório em memória vs SQLite.**
-   A retenção é curta (60min) e o fluxo inteiro vive dentro de um request
-   ciclo; banco adiciona volume e configuração sem valor para a avaliação.
-   Deixei a interface (port) pronta para trocar sem tocar no domínio.
+**Polling vs SSE/WebSocket.** O contrato tem um único endpoint de status e o processamento é curto. Polling é simples, funciona atrás de qualquer proxy e não mantém conexões abertas.
 
 ### 2. O que na sua solução quebra primeiro em produção?
 
-O **pool do Tesseract**: em produção, o worker é criado sob demanda na
-primeira requisição (warm start ~2s) e há um limite de concorrência apenas
-por documento (`OCR_WORKER_POOL_SIZE` como `concurrencyLimit` do
-`ProcessTranscriptionUseCase`) — não existe um teto global de workers entre
-transcrições simultâneas. Sob carga, vários workers simultâneos podem
-estourar memória do container (imagem Alpine, ~300MB); a fila per-IP limita
-o número de jobs por cliente, mas não o agregado.
+O pool do Tesseract. O worker é criado sob demanda na primeira requisição e há limite de concorrência por documento, mas não existe um teto global entre transcrições simultâneas. Sob carga, múltiplos workers podem estourar memória do container.
 
 ### 3. Onde você não confia no que entregou?
 
-- **Extratores em layouts desconhecidos**: funcionam bem nos PDFs sintéticos
-  (tabelas simples, linhas regulares), mas holerites com layouts complexos
-  (múltiplas seções, colunas mescladas, grid de horas) provavelmente
-  misturam `fields` e `bases` ou perdem linhas — o teste E2E com os PDFs
-  oficiais não pôde ser feito (não estão no repo público).
-- **OCR**: a calibração dos `?` com Tesseract não foi validada contra
-  digitalizações reais.
-- **Frontend**: a tabela editável funciona. Agora existem testes de componente React (Testing Library) e testes E2E com Playwright, além de validação manual via curl/Docker.
+Nos extratores com layouts desconhecidos. Funcionam bem em PDFs com tabelas simples, mas holerites com layouts complexos provavelmente perdem linhas ou misturam campos. O teste E2E com os PDFs oficiais do desafio não pôde ser feito.
+
+Também não validei a calibração do OCR contra digitalizações reais — os `?` funcionam no código, mas não testei com documentos escaneados de verdade.

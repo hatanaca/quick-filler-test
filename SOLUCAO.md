@@ -15,7 +15,7 @@ npm run dev                       # backend: http://localhost:3001
 npm run dev --workspace=@quickfiller/frontend   # frontend: http://localhost:5173
 ```
 
-### Docker (requisito duro do desafio)
+### Docker
 
 ```bash
 docker compose up --build
@@ -28,83 +28,53 @@ docker compose up --build
 npm run lint && npm run typecheck && npm test
 ```
 
-## Decisões técnicas
+## Stack
 
-### Stack
+A vaga pedia TypeScript. O strict mode combina bem com classes e interfaces, o que facilita a separação de camadas do DDD. Fastify foi escolhido sobre Express pela performance e validação de schema nativa.
 
-- **Fastify** (Node 22 + TypeScript strict): mais rápido que Express e com
-  validação de schema nativa; o contrato HTTP é o único requisito fechado.
-- **Tesseract.js** para OCR: local, sem custo e sem API key — a maior parte
-  dos documentos reais é escaneada e o fallback precisa funcionar offline.
-  Modelo `por` carregado uma vez e reutilizado (warm start).
-- **pdfjs-dist** para extração de texto e renderização de páginas; linhas
-  reconstruídas pela geometria (posição Y), não por `\n` — PDFs reais não
-  têm quebras de linha.
-- **ExcelJS** para xlsx; csv e json nativos.
-- **React + Vite + react-pdf** para a interface; PDF viewer com lazy loading.
-- **JWT + httpOnly cookies** para autenticação: stateless, funciona atrás de proxies, refresh rotation com cookies httpOnly. Senhas hasheadas com `scrypt`.
+Para OCR, Tesseract.js local — sem custo, sem API key, roda offline. O pdfjs-dist extrai texto dos PDFs, reconstruindo linhas pela posição Y (PDFs reais não têm quebras de linha limpas). ExcelJS gera as planilhas xlsx.
 
-### Arquitetura
+## Arquitetura
 
-DDD com Ports & Adapters:
+DDD com Ports & Adapters (Hexagonal):
 
-- `packages/domain` — puro, zero dependências externas: entidade
-  `Transcription` (com regras de transição de status), value objects
-  (`Money` nunca float, `Punch`, `DayRecord`, `PageHolerite`...), serviços
-  (`WarningCalculator`, `HighlightDetector`, `SpreadsheetBuilder`) e ports
-  (repositório, PDF, OCR, storage, gerador de planilha).
-- `packages/application` — use cases (create/get/update/process/export) e
-  event bus em memória. Testados com mocks **apenas nos ports**.
-- `packages/infrastructure` — Fastify (rotas, middleware de segurança,
-  upload com magic bytes, logger com redação de PII), adapters reais e DI
-  manual.
-- `packages/frontend` — envio, polling de status (2s), tabela editável com
-  problemas destacados nas cores da planilha, PDF ao lado, download.
+- `packages/domain` — camada pura, sem dependências externas. Entidades, value objects (`Money` como string, nunca float), serviços e ports.
+- `packages/application` — use cases e event bus em memória. Testes com mocks nos ports.
+- `packages/infrastructure` — Fastify, middlewares de segurança, adapters reais, DI manual.
+- `packages/frontend` — React, polling de status, tabela editável com destaques, download.
 
-### Processamento assíncrono
+## TDD
 
-`POST /api/transcricoes` responde `202` imediatamente e o processamento roda
-em background (`setImmediate`) — nunca dentro do request HTTP. O cliente
-descobre a conclusão por polling em `GET /api/transcricoes/:id`.
+O projeto foi desenvolvido com agentes de IA desde o início. TDD entrou como proteção: testes primeiro reduzem o espaço para o agente gerar código incorreto. Os testes definem a especificação.
 
-### Escolha dos testes (uma linha por caso)
+## Processamento
 
-- `money.vo`: o `?` e o formato brasileiro são a base da "honestidade dos dados" (15% da nota)
-- `warning-calculator`: avisos derivados (batidas ímpares, não sequencial, dez→jan) regem os destaques
-- `extractors`: a separação `fields`/`bases` e a ordem do documento são o coração da precisão (30%)
-- `pipeline` (E2E): prova que enviar → processar → revisar → baixar funciona de ponta a ponta (20%)
-- `upload-security`: magic bytes, limite e sanitização são o que o recrutador verifica em segurança (10%)
+`POST /api/transcricoes` retorna 202 e o processamento roda em background. O cliente acompanha o status por polling em `GET /api/transcricoes/:id`.
 
-## Política de retenção
+O parser de páginas usa uma pool de workers com concorrência limitada (configurável via `OCR_WORKER_POOL_SIZE`). Páginas escaneadas são renderizadas e enviadas ao OCR em paralelo, com limite de threads para não estourar memória. O Tesseract é intensivo em CPU — sem essa separação, uma transcrição com muitas páginas travaria o container.
 
-- **O que guarda**: o PDF enviado (em disco, `uploads/`) e a transcrição
-  (repositório em memória).
-- **Onde**: `uploads/` dentro do container (volume Docker); transcrições em
-  memória do processo.
-- **Por quanto tempo**: arquivos e transcrições são removidos após
-  `RETENTION_MINUTES` (padrão 60 minutos) pelo cleanup service.
-- **Sem PII**: nomes de arquivo são UUIDs; logs redigem CPF, matrícula e
-  e-mail automaticamente.
+## Infraestrutura e deploy
 
-## OCR: escolha e comportamento
+O servidor roda em um Arch Linux doméstico. O IP público é dinâmico, então configurei DDNS no roteador para manter o domínio fixo. Com a aplicação pública, adicionei TLS — o fluxo é: cliente → DDNS → Hostinger (gateway com SSL) → servidor local. Utilizei um domínio próprio que tenho com vencimento em 01/09.
 
-- Ferramenta: **Tesseract.js** (local, modelo `por`).
-- Detecção: `extractPages` devolve o texto por página; páginas sem texto são
-  renderizadas como imagem e enviadas ao OCR.
-- **Pré-processamento de imagem** antes do OCR: detecção automática de tinta
-  vermelha (para carimbos), grayscale, contraste 1-99%, binarização
-  adaptativa de Sauvola, correção de deskew por projeção.
-- **Incerteza por caractere**: símbolos com confiança abaixo do limiar
-  (`OCR_CONFIDENCE_THRESHOLD`, padrão 60) são substituídos por `?`.
-- **PSM configurável** (`OCR_PSM`, padrão 6 — bloco uniforme, bom para tabelas).
-- Limitação conhecida: tinta vermelha desbotada e dot-matrix (ex.:
-  `time-card-04.pdf`) é ilegível pelo Tesseract local — sai honestamente
-  vazio. Manuscrito (cursivo) fica para revisão manual na tabela editável.
+## Segurança
+
+Middlewares de validação implementados: upload verificado por magic bytes (não por extensão), limite de 20MB, nomes de arquivo sanitizados como UUID, rate limiting, helmet, CORS whitelist e redação automática de PII nos logs (CPF, matrícula, e-mail).
+
+## Testes
+
+- `money.vo` — formato brasileiro e `?` como base da honestidade dos dados
+- `warning-calculator` — avisos derivados que regem os destaques
+- `extractors` — separação fields/bases e ordem do documento
+- `pipeline` (E2E) — ciclo completo: enviar → processar → revisar → baixar
+- `upload-security` — magic bytes, limite, sanitização
+- Componentes React (Testing Library) e E2E (Playwright)
+
+## OCR
+
+Tesseract.js local, modelo `por`. Páginas sem texto são renderizadas como imagem e enviadas ao OCR após pré-processamento (grayscale, contraste, binarização, deskew). O processamento usa pool de workers configurável para paralelizar o OCR de múltiplas páginas com limite de concorrência. Caracteres com confiança abaixo do limiar viram `?`. Resultados ilegíveis saem vazios.
 
 ## Layouts suportados
-
-Os extratores detectam o layout por documento (extração de texto com colunas
-preservadas via `\t`) e despacham para o parser específico:
 
 | Tipo         | Layout                                   | Documento            |
 | ------------ | ---------------------------------------- | -------------------- |
@@ -118,31 +88,10 @@ preservadas via `\t`) e despacham para o parser específico:
 | holerite     | Demonstrativo de Pagamento               | `payroll-03.pdf`     |
 | holerite     | Recibo de Pagamento (OCR)                | `payroll-04.pdf`     |
 
-## O que ficou de fora (escopo cortado)
+## O que ficou de fora
 
-- **OCR de documentos ilegíveis**: `time-card-04.pdf` tem digitalização
-  ilegível — a saída fica honestamente vazia. Os layouts escaneados
-  (`time-card-02/03`, `payroll-04`) são extraídos por melhor esforço.
-- **Bônus** (não implementados): rastreabilidade visual (coordenadas),
-  detecção automática de tipo.
-- **Banco de dados**: repositório em memória é suficiente para o fluxo e a
-  retenção curta; a interface `TranscriptionRepository` permite trocar por
-  SQLite/Postgres sem tocar em domain/application.
+Documentos ilegíveis (como `time-card-04.pdf`) saem com resultado vazio. Não implementei rastreabilidade visual nem detecção automática de tipo de documento. O banco em memória atende à retenção curta; a interface permite trocar por banco relacional sem alterar o domínio.
 
-## O que eu mudaria no formato (se pudesse)
+## Autoavaliação
 
-O contrato é bom. Única observação: a incerteza `?` perde a posição do
-separador decimal quando o separador em si não é legível — uma convenção
-explícita para esse caso (`2.389?77` vs `2.389,?7`) reduziria ambiguidade na
-revisão.
-
-## Como avalio minha entrega
-
-| Critério              | Autoavaliação                                                       |
-| --------------------- | ------------------------------------------------------------------- |
-| Precisão da extração  | Forte nos PDFs com texto; OCR funciona mas depende da digitalização |
-| Honestidade dos dados | `?` por caractere, datas impossíveis nunca produzidas               |
-| Ciclo completo        | Validado E2E em teste e via Docker                                  |
-| Arquitetura           | DDD hexagonal, pipeline único, processamento assíncrono             |
-| Segurança             | Magic bytes, limite, retenção, PII redigida                         |
-| Código/decisões       | 33 arquivos de teste, lint + typecheck limpos, docs bilingues       |
+Extração funciona bem em PDFs com texto embutido. OCR é funcional mas depende da qualidade da digitalização. O ciclo completo está validado com testes E2E e Docker. A arquitetura mantém as camadas claras sem overengineering. Segurança cobre os pontos essenciais.

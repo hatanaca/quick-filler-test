@@ -291,7 +291,7 @@ tests/
 
 - Domain: threshold 90% (branches/functions/lines)
 - Application: threshold 80%
-- Frontend: não medido (gap conhecido)
+- Frontend: componentes cobertos com Vitest + Testing Library
 
 ### 7.3 Testes notáveis
 
@@ -435,7 +435,7 @@ Security / Fixed / Performance / Docs.
 ## 10. Entregáveis do desafio
 
 - [x] Repositório GitHub: `https://github.com/hatanaca/quick-filler-test`
-- [ ] URL deployada
+- [x] URL deployada
 - [x] SOLUCAO.md (política de retenção, escolha do OCR)
 - [x] PROCESSO.md (3 perguntas obrigatórias)
 - [x] Spreadsheets de exemplo (2 PDFs — cartao-ponto-1, holerite-1 — × xlsx/csv/json)

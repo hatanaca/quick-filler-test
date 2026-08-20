@@ -4,15 +4,17 @@ import { preprocessImage, type PreprocessMode } from './image-preprocessor.js'
 
 /**
  * Adapter de OCR com Tesseract (local, sem custo, sem API key).
- * O worker é criado uma única vez e reutilizado (warm start ~2s),
- * evitando a inicialização do modelo a cada requisição.
+ * O pool de workers é inicializado preguiçosamente e reutilizado
+ * (warm start ~2s), evitando a inicialização do modelo a cada requisição.
+ * Round-robin distribui chamadas concorrentes entre os workers.
  *
  * Recursos adicionais:
  * - Pré-processamento de imagem (grayscale/contraste/binarização)
  * - Incerteza por caractere: símbolos com confiança abaixo do limiar viram `?`
  */
 export class TesseractOcrAdapter implements OcrEnginePort {
-  private workerPromise: Promise<Awaited<ReturnType<typeof createWorker>>> | null = null
+  private workers: Promise<Awaited<ReturnType<typeof createWorker>>>[] = []
+  private nextWorker = 0
 
   constructor(
     private readonly lang: string = 'por',
@@ -20,23 +22,32 @@ export class TesseractOcrAdapter implements OcrEnginePort {
     private readonly preprocessMode: PreprocessMode = 'auto',
     private readonly psm: number = 6,
     private readonly whitelist: string = '',
+    private readonly poolSize: number = 2,
   ) {}
 
-  private getWorker(): Promise<Awaited<ReturnType<typeof createWorker>>> {
-    if (!this.workerPromise) {
-      this.workerPromise = createWorker(this.lang).then(async (worker) => {
-        // PSM 6 (bloco uniforme) é melhor que o automático (3) para tabelas
-        // de cartão/holerite; whitelist restringe o alfabeto e reduz
-        // confusões 8/B, 0/O — vazio = sem restrição.
-        const params: Record<string, string> = {
-          tessedit_pageseg_mode: String(this.psm),
-        }
-        if (this.whitelist) params.tessedit_char_whitelist = this.whitelist
-        await worker.setParameters(params)
-        return worker
-      })
+  private initPool(): void {
+    if (this.workers.length > 0) return
+    for (let i = 0; i < this.poolSize; i++) {
+      this.workers.push(this.initWorker())
     }
-    return this.workerPromise
+  }
+
+  private initWorker(): Promise<Awaited<ReturnType<typeof createWorker>>> {
+    return createWorker(this.lang).then(async (worker) => {
+      const params: Record<string, string> = {
+        tessedit_pageseg_mode: String(this.psm),
+      }
+      if (this.whitelist) params.tessedit_char_whitelist = this.whitelist
+      await worker.setParameters(params)
+      return worker
+    })
+  }
+
+  private async getWorker(): Promise<Awaited<ReturnType<typeof createWorker>>> {
+    this.initPool()
+    const worker = await this.workers[this.nextWorker % this.poolSize]!
+    this.nextWorker++
+    return worker
   }
 
   async recognize(imageBuffer: Buffer): Promise<string> {
@@ -153,10 +164,16 @@ export class TesseractOcrAdapter implements OcrEnginePort {
   }
 
   async close(): Promise<void> {
-    const worker = this.workerPromise ? await this.workerPromise : null
-    this.workerPromise = null
-    if (worker) {
-      await worker.terminate()
-    }
+    const resolved = await Promise.allSettled(this.workers)
+    await Promise.all(
+      resolved
+        .filter(
+          (r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof createWorker>>> =>
+            r.status === 'fulfilled',
+        )
+        .map((r) => r.value.terminate()),
+    )
+    this.workers = []
+    this.nextWorker = 0
   }
 }

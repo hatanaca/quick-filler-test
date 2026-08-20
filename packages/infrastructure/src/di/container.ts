@@ -39,6 +39,7 @@ export function buildContainer(config: AppConfig): Container {
     config.ocrPreprocess,
     config.ocrPsm,
     config.ocrWhitelist,
+    config.ocrWorkerPoolSize,
   )
   const generator = new ExcelJsGeneratorAdapter()
 

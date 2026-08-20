@@ -41,7 +41,6 @@ export async function preprocessImage(
   if (Math.abs(skew) > 0.3) {
     const rotated = rotateGray(data, image.width, image.height, -skew)
     data.set(rotated)
-    enhanceContrast(data)
     binary = sauvolaThreshold(data, image.width, image.height)
   }
 
@@ -230,20 +229,25 @@ function applyBinary(data: Uint8ClampedArray, binary: Uint8Array): void {
  * histograma de linhas. O ângulo que deixa o perfil mais "pontiagudo" é o skew.
  */
 function detectSkew(binary: Uint8Array, width: number, height: number): number {
-  const blacks: { x: number; y: number }[] = []
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if ((binary[y * width + x] ?? 0) === 0) blacks.push({ x, y })
-    }
+  const blackIndices: number[] = []
+  for (let i = 0; i < binary.length; i++) {
+    if (binary[i] === 0) blackIndices.push(i)
   }
-  if (blacks.length === 0) return 0
+  if (blackIndices.length === 0) return 0
+
+  // Sample for large images to bound CPU work
+  const MAX_SAMPLES = 10_000
+  const step = Math.max(1, Math.floor(blackIndices.length / MAX_SAMPLES))
 
   let bestAngle = 0
   let bestVariance = -1
   for (let angle = -5; angle <= 5; angle += 0.5) {
     const tan = Math.tan((angle * Math.PI) / 180)
     const hist = new Float64Array(height)
-    for (const { x, y } of blacks) {
+    for (let i = 0; i < blackIndices.length; i += step) {
+      const idx = blackIndices[i]!
+      const x = idx % width
+      const y = (idx - x) / width
       const row = Math.round(y - x * tan)
       if (row >= 0 && row < height) hist[row] = (hist[row] ?? 0) + 1
     }

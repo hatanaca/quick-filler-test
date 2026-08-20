@@ -8,16 +8,16 @@ The user uploads a PDF (time card or pay stub), the app extracts the data (embed
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Node.js 22+ · TypeScript · Fastify |
-| Frontend | React 18 · Vite · react-pdf |
-| OCR | Tesseract.js (local, no cloud) |
-| PDF | pdfjs-dist |
-| Spreadsheets | ExcelJS (xlsx) · native CSV · JSON |
-| Tests | Vitest (TDD: domain and application first) |
-| Quality | ESLint · Prettier · TypeScript strict |
-| Container | Docker + docker-compose |
+| Layer        | Technology                                 |
+| ------------ | ------------------------------------------ |
+| Backend      | Node.js 22+ · TypeScript · Fastify         |
+| Frontend     | React 18 · Vite · react-pdf                |
+| OCR          | Tesseract.js (local, no cloud)             |
+| PDF          | pdfjs-dist                                 |
+| Spreadsheets | ExcelJS (xlsx) · native CSV · JSON         |
+| Tests        | Vitest (TDD: domain and application first) |
+| Quality      | ESLint · Prettier · TypeScript strict      |
+| Container    | Docker + docker-compose                    |
 
 ## Architecture
 
@@ -57,15 +57,20 @@ docker compose up --build
 
 ## API
 
-Literal challenge contract (mandatory and unchangeable):
+Literal challenge contract (mandatory and unchangeable). Transcription routes
+require `Authorization: Bearer <token>`:
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/transcricoes` | Upload `multipart/form-data` (`arquivo` + `tipo`) → `202 { id }` |
-| GET | `/api/transcricoes/:id` | Status (`processando`/`concluido`/`erro`) + `value` |
-| PUT | `/api/transcricoes/:id` | Replaces `value` with UI corrections |
-| GET | `/api/transcricoes/:id/planilha?formato=xlsx\|csv\|json` | Download with corrections |
-| GET | `/healthz` | Health check |
+| Method | Route                                                    | Description                                                      |
+| ------ | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| POST   | `/api/auth/login`                                        | Login (email+password) → JWT + refresh cookie                    |
+| POST   | `/api/auth/refresh`                                      | Refresh access token via cookie                                  |
+| POST   | `/api/auth/logout`                                       | Revoke refresh token                                             |
+| GET    | `/api/auth/me`                                           | Authenticated user info                                          |
+| POST   | `/api/transcricoes`                                      | Upload `multipart/form-data` (`arquivo` + `tipo`) → `202 { id }` |
+| GET    | `/api/transcricoes/:id`                                  | Status (`processando`/`concluido`/`erro`) + `value`              |
+| PUT    | `/api/transcricoes/:id`                                  | Replaces `value` with UI corrections                             |
+| GET    | `/api/transcricoes/:id/planilha?formato=xlsx\|csv\|json` | Download with corrections                                        |
+| GET    | `/healthz`                                               | Health check                                                     |
 
 Details and examples in [docs/API.md](docs/API.md).
 
@@ -83,11 +88,21 @@ Details in [docs/SECURITY.md](docs/SECURITY.md).
 ## Tests
 
 ```bash
-npm test                 # all
+npm test                 # all (unit + integration)
 npm run test:unit        # domain + application (TDD, no mocks in domain)
+npm run test:domain      # domain only (VOs, entities, extractors, services)
+npm run test:frontend    # React components (Vitest + Testing Library)
 npm run test:integration # HTTP routes + E2E pipeline with real PDFs
+npm run test:e2e         # end-to-end with Playwright
 npm run test:coverage    # domain >= 90%, application >= 80%
 ```
+
+## Structure
+
+- `docs/` — architecture, API, security, and TDD guide (PT-BR/EN)
+- `exemplos/` — challenge PDFs (see [exemplos/README.md](exemplos/README.md))
+- `tests/fixtures/pdfs/` — synthetic test PDFs
+- `scripts/` — test PDF generation and deliverable spreadsheet generation
 
 ## License
 

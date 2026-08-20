@@ -101,5 +101,4 @@ o número de jobs por cliente, mas não o agregado.
   oficiais não pôde ser feito (não estão no repo público).
 - **OCR**: a calibração dos `?` com Tesseract não foi validada contra
   digitalizações reais.
-- **Frontend**: a tabela editável funciona, mas não tenho teste de UI
-  automatizado (apenas manual via curl/Docker).
+- **Frontend**: a tabela editável funciona. Agora existem testes de componente React (Testing Library) e testes E2E com Playwright, além de validação manual via curl/Docker.

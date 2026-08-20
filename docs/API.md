@@ -4,7 +4,50 @@ Contrato **literal e obrigatório** do desafio — divergir significa nota zero
 em precisão. / Literal and **mandatory** challenge contract — diverging means
 zero precision score.
 
-## `POST /api/transcricoes`
+## Autenticação / Authentication
+
+Todas as rotas de transcrição requerem JWT Bearer token. / All transcription
+routes require a JWT Bearer token.
+
+### `POST /api/auth/login`
+
+Body: `{ "email": "...", "password": "..." }`
+
+```http
+HTTP/1.1 200 OK
+{ "accessToken": "eyJ..." }
+```
+
+Também define cookie httpOnly `refreshToken` / Also sets httpOnly
+`refreshToken` cookie.
+
+### `POST /api/auth/refresh`
+
+Usa cookie `refreshToken` para gerar novo `accessToken`. / Uses
+`refreshToken` cookie to generate a new `accessToken`.
+
+### `POST /api/auth/logout`
+
+Revoga o refresh token. / Revokes the refresh token.
+
+### `GET /api/auth/me`
+
+Requer header `Authorization: Bearer <token>`. / Requires
+`Authorization: Bearer <token>` header.
+
+```http
+HTTP/1.1 200 OK
+{ "id": "...", "email": "...", "role": "user" }
+```
+
+---
+
+## Rotas de Transcrição / Transcription Routes
+
+> Todas requerem `Authorization: Bearer <token>` / All require
+> `Authorization: Bearer <token>` header.
+
+### `POST /api/transcricoes`
 
 `multipart/form-data` com dois campos / with two fields:
 

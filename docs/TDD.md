@@ -24,12 +24,13 @@ Nunca escreva código de produção sem antes ter um teste falhando.
   ╱──────────────────╲
 ```
 
-| Camada | Tipo | Mocks? |
-|--------|------|--------|
-| Domain | Unitário (VOs, entidades, serviços) | Nenhum — é puro |
-| Application | Unitário (use cases) | Sim — apenas nos ports |
-| Infrastructure | Integração (rotas, upload, pipeline) | Nenhum — adapters reais |
-| E2E | Ciclo completo via HTTP | Nenhum |
+| Camada         | Tipo                                 | Mocks?                        |
+| -------------- | ------------------------------------ | ----------------------------- |
+| Domain         | Unitário (VOs, entidades, serviços)  | Nenhum — é puro               |
+| Application    | Unitário (use cases)                 | Sim — apenas nos ports        |
+| Infrastructure | Integração (rotas, upload, pipeline) | Nenhum — adapters reais       |
+| Frontend       | Unitário (componentes React)         | Sim — Testing Library + jsdom |
+| E2E            | Ciclo completo via Playwright        | Nenhum                        |
 
 ### Convenções
 
@@ -44,7 +45,10 @@ Nunca escreva código de produção sem antes ter um teste falhando.
 
 ```bash
 npm run test:unit         # domain + application
+npm run test:domain       # apenas domain
+npm run test:frontend     # componentes React (Vitest + Testing Library)
 npm run test:integration  # rotas + pipeline E2E (PDFs reais em fixtures)
+npm run test:e2e          # testes end-to-end (Playwright, precisa de build + servidor)
 npm run test:coverage     # thresholds: domain >= 90%, application >= 80%
 ```
 
@@ -52,8 +56,11 @@ npm run test:coverage     # thresholds: domain >= 90%, application >= 80%
 
 - `tests/unit/domain/` — espelha `packages/domain/src`
 - `tests/unit/application/` — use cases
+- `tests/unit/infrastructure/` — config, adapters
 - `tests/integration/` — rotas e pipeline
+- `tests/e2e/` — testes end-to-end (Playwright)
 - `tests/fixtures/pdfs/` — PDFs sintéticos (`npm run test-pdfs`)
+- `packages/frontend/src/components/*.test.tsx` — componentes React
 
 ## English
 
@@ -69,12 +76,13 @@ Never write production code without a failing test first.
 
 ### Test pyramid
 
-| Layer | Type | Mocks? |
-|-------|------|--------|
-| Domain | Unit (VOs, entities, services) | None — it is pure |
-| Application | Unit (use cases) | Yes — only at ports |
-| Infrastructure | Integration (routes, upload, pipeline) | None — real adapters |
-| E2E | Full cycle over HTTP | None |
+| Layer          | Type                                   | Mocks?                        |
+| -------------- | -------------------------------------- | ----------------------------- |
+| Domain         | Unit (VOs, entities, services)         | None — it is pure             |
+| Application    | Unit (use cases)                       | Yes — only at ports           |
+| Infrastructure | Integration (routes, upload, pipeline) | None — real adapters          |
+| Frontend       | Unit (React components)                | Yes — Testing Library + jsdom |
+| E2E            | Full cycle via Playwright              | None                          |
 
 ### Conventions
 
@@ -88,7 +96,10 @@ Never write production code without a failing test first.
 
 ```bash
 npm run test:unit         # domain + application
+npm run test:domain       # domain only
+npm run test:frontend     # React components (Vitest + Testing Library)
 npm run test:integration  # routes + E2E pipeline (real PDFs in fixtures)
+npm run test:e2e          # end-to-end (Playwright, requires build + server)
 npm run test:coverage     # thresholds: domain >= 90%, application >= 80%
 ```
 
@@ -96,5 +107,8 @@ npm run test:coverage     # thresholds: domain >= 90%, application >= 80%
 
 - `tests/unit/domain/` — mirrors `packages/domain/src`
 - `tests/unit/application/` — use cases
+- `tests/unit/infrastructure/` — config, adapters
 - `tests/integration/` — routes and pipeline
+- `tests/e2e/` — end-to-end tests (Playwright)
 - `tests/fixtures/pdfs/` — synthetic PDFs (`npm run test-pdfs`)
+- `packages/frontend/src/components/*.test.tsx` — React components

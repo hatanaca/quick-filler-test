@@ -41,6 +41,16 @@ substituídos por `[REDACTED]`/`[CPF]`/`[EMAIL]`.
 - Erros de domínio → 400 com mensagem; erros inesperados → 500 genérico
   (sem stack trace em produção)
 
+### Autenticação
+
+- **JWT Bearer tokens** para autenticação da API (exceto `/healthz` e rotas
+  de auth)
+- **Refresh tokens** em cookies httpOnly (secure em HTTPS) com rotação
+- **Senhas** hasheadas com `scrypt` + salt aleatório de 16 bytes
+- **Comparação timing-safe** (`crypto.timingSafeEqual`) para prevenir
+  timing attacks na verificação de senha
+- **Revogação**: logout invalida o refresh token
+
 ### Docker
 
 - `USER app` — container não roda como root (usuário `app` criado no Dockerfile)
@@ -94,6 +104,16 @@ replaced with `[REDACTED]`/`[CPF]`/`[EMAIL]`.
   proxies (e.g. nginx in Docker), preventing IP spoofing to bypass rate limits
 - Domain errors → 400 with message; unexpected errors → generic 500
   (no stack trace in production)
+
+### Authentication
+
+- **JWT Bearer tokens** for API authentication (except `/healthz` and auth
+  routes)
+- **Refresh tokens** in httpOnly cookies (secure over HTTPS) with rotation
+- **Passwords** hashed with `scrypt` + 16-byte random salt
+- **Timing-safe comparison** (`crypto.timingSafeEqual`) to prevent timing
+  attacks during password verification
+- **Revocation**: logout invalidates the refresh token
 
 ### Docker
 

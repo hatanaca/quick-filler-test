@@ -15,9 +15,20 @@
   - Path traversal (`../../etc/passwd`).
   - PII (informações pessoais) no nome do arquivo.
 
+### Autenticação
+
+- **JWT Bearer tokens** para autenticação da API. Endpoints requerem header
+  `Authorization: Bearer <token>` (exceto `/healthz` e rotas de auth).
+- **Refresh tokens** em cookies httpOnly (secure em HTTPS) com rotação.
+- **Senhas** hasheadas com `scrypt` + salt aleatório de 16 bytes; comparação
+  timing-safe (`crypto.timingSafeEqual`) para prevenir timing attacks.
+- Rotas de auth: `POST /api/auth/login`, `/refresh`, `/logout`,
+  `GET /api/auth/me`.
+
 ### Rate Limiting
 
-- **300 req/min por IP (padrão):** Impede abuso da API. O docker-compose sobrescreve para 100 em produção.
+- **300 req/min por IP (padrão):** Impede abuso da API. Configurável via
+  `RATE_LIMIT_MAX`.
 - **Helmet:** Headers de segurança HTTP (X-Content-Type-Options, X-Frame-Options, etc.).
 - **CORS:** Whitelist de origens permitidas (padrão: `http://localhost:5173`).
 

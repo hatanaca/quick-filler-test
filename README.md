@@ -73,10 +73,15 @@ docker compose up --build
 
 ## API
 
-Contrato literal do desafio (obrigatório e inalterável):
+Contrato literal do desafio (obrigatório e inalterável). Rotas de transcrição
+requerem `Authorization: Bearer <token>`:
 
 | Método | Rota                                                     | Descrição                                                        |
 | ------ | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| POST   | `/api/auth/login`                                        | Login (email+password) → JWT + refresh cookie                    |
+| POST   | `/api/auth/refresh`                                      | Renova access token via refresh cookie                           |
+| POST   | `/api/auth/logout`                                       | Revoga refresh token                                             |
+| GET    | `/api/auth/me`                                           | Dados do usuário autenticado                                     |
 | POST   | `/api/transcricoes`                                      | Upload `multipart/form-data` (`arquivo` + `tipo`) → `202 { id }` |
 | GET    | `/api/transcricoes/:id`                                  | Status (`processando`/`concluido`/`erro`) + `value`              |
 | PUT    | `/api/transcricoes/:id`                                  | Substitui `value` com as correções da interface                  |
@@ -101,6 +106,7 @@ Detalhes em [docs/SECURITY.md](docs/SECURITY.md).
 ```bash
 npm test                 # todos (unit + integration)
 npm run test:unit        # domain + application (TDD, sem mocks no domain)
+npm run test:domain      # apenas domain (VOs, entidades, extratores, serviços)
 npm run test:frontend    # componentes React (Vitest + Testing Library)
 npm run test:integration # rotas HTTP + pipeline E2E com PDFs reais
 npm run test:e2e         # testes end-to-end com Playwright

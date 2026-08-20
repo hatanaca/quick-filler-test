@@ -42,6 +42,7 @@ npm run lint && npm run typecheck && npm test
   têm quebras de linha.
 - **ExcelJS** para xlsx; csv e json nativos.
 - **React + Vite + react-pdf** para a interface; PDF viewer com lazy loading.
+- **JWT + httpOnly cookies** para autenticação: stateless, funciona atrás de proxies, refresh rotation com cookies httpOnly. Senhas hasheadas com `scrypt`.
 
 ### Arquitetura
 
@@ -144,4 +145,4 @@ revisão.
 | Ciclo completo        | Validado E2E em teste e via Docker                                  |
 | Arquitetura           | DDD hexagonal, pipeline único, processamento assíncrono             |
 | Segurança             | Magic bytes, limite, retenção, PII redigida                         |
-| Código/decisões       | 211 testes, lint + typecheck limpos, docs bilingues                 |
+| Código/decisões       | 33 arquivos de teste, lint + typecheck limpos, docs bilingues       |

@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-08-19
+
+### Added
+
+- **Segurança**: sistema de autenticação JWT completo — login, refresh (cookie
+  httpOnly), logout e endpoint `GET /api/auth/me`. Senhas hasheadas com
+  `scrypt` + salt aleatório; comparação timing-safe contra timing attacks.
+  Todas as rotas de transcrição agora requerem `Authorization: Bearer <token>`.
+- **OCR**: pré-processamento de imagem antes do OCR — grayscale, binarização
+  adaptativa de Sauvola, correção de deskew por projeção, detecção automática
+  de tinta vermelha (carimbos).
+- **Domínio**: novos utilitários compartilhados — `date-utils.ts`
+  (`parseDateRaw`, `daysBetween`), `text-utils.ts`, `parse-utils.ts`
+  (funções de parsing compartilhadas), `competence-builder.ts` (builder
+  para competência de holerites).
+- **Domínio**: tipo discriminated union com campo `kind` para
+  `TranscriptionResult` — permite distinguir `cartao-ponto` de `holerite`
+  no tipo de resultado.
+
+### Fixed
+
+- **Frontend**: `PdfViewer` — caminho dos CSS do react-pdf corrigido; import
+  `?url` para worker em produção.
+- **Domínio**: `HEADER_KEYWORDS_RE` filtrava dados legítimos do cartão de
+  ponto — removido.
+- **Infra**: nginx — `limit_req_zone` movido para nível http (fora do server
+  block), correto para múltiplos server blocks.
+- **Infra**: networking Docker — backend e frontend fazem bind em `0.0.0.0`
+  para comunicação entre containers.
+- **Infra**: leitura e transcrição de documentos em produção corrigida
+  (edge cases na extração e edição).
+- **Deploy**: credenciais e IPs hardcoded removidos de scripts de deploy.
+
+### Changed
+
+- **OCR**: `TesseractOcrAdapter` reescrito com acesso à hierarquia de
+  símbolos do Tesseract (acesso a alternativas por caractere).
+
+### Removed
+
+- **CI**: workflow de deploy do GitHub Actions (`deploy.yml`) removido —
+  deploy agora é manual via SSH/scripts.
+
 ## [1.3.0] - 2026-08-17
 
 ### Fixed

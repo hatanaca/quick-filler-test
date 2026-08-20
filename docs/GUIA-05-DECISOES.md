@@ -47,6 +47,12 @@
 - **NLP/ML:** Mais flexível, mas precisa de treinamento, é mais lento, e pode errar.
 - **Decisão:** Regex porque os formatos de cartão de ponto e holerite são previsíveis.
 
+### Autenticação JWT vs Session Store
+
+- **JWT + httpOnly cookies:** Stateless, funciona atrás de qualquer proxy, refresh rotation. Access token curto (15min), refresh token longo em cookie httpOnly secure.
+- **Session store (Redis/DB):** Mais controle sobre revogação, mas requer infraestrutura adicional e estado no servidor.
+- **Decisão:** JWT porque o projeto já é stateless (repositório em memória) e funciona perfeitamente com um único processo. Logout revoga o refresh token.
+
 ---
 
 ## 5.2 Padrões e Conceitos Técnicos

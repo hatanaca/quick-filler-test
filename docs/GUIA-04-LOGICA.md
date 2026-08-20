@@ -13,13 +13,14 @@ Frontend → Fastify Route → CreateTranscriptionUseCase
 **O que acontece no route (`transcricoes.route.ts`):**
 
 1. `ProcessingQueue.run(request.ip, ...)` — Limita uploads simultâneos por IP (padrão: 3). Se exceder, retorna 429.
-2. Lê o multipart/form-data: campo `arquivo` (PDF) e campo `tipo` ("cartao-ponto" ou "holerite").
-3. Validações:
+2. `verifyToken` preHandler — Valida JWT Bearer token no header `Authorization`. Se inválido ou ausente, retorna 401.
+3. Lê o multipart/form-data: campo `arquivo` (PDF) e campo `tipo` ("cartao-ponto" ou "holerite").
+4. Validações:
    - `isPdfMagicBytes(arquivo)` — Checa se os primeiros 5 bytes são `%PDF-` (nunca confia em extensão ou MIME).
    - `isUploadTooLarge(arquivo, maxBytes)` — Limite de 20MB.
    - `isDocumentType(tipo)` — Tipo válido.
-4. Chama `CreateTranscriptionUseCase.execute(...)`.
-5. Retorna `202 { id }` (Accepted — processamento é assíncrono).
+5. Chama `CreateTranscriptionUseCase.execute(...)`.
+6. Retorna `202 { id }` (Accepted — processamento é assíncrono).
 
 **O que acontece no use case (`create-transcription.use-case.ts`):**
 

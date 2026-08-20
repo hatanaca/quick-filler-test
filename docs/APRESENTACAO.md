@@ -1,4 +1,4 @@
-# Referência completa para apresentação — Quick Filler v1.1.0
+# Referência completa para apresentação — Quick Filler v1.4.0
 
 ## 1. O que é o projeto
 
@@ -93,21 +93,22 @@ Métodos:
 
 ### 3.2 Value Objects (imutáveis, factories `from()`)
 
-| VO                    | Validação                                            | Segurança                                 |
-| --------------------- | ---------------------------------------------------- | ----------------------------------------- |
-| `TranscriptionId`     | Regex UUID canônico                                  | Previne path traversal                    |
-| `DocumentType`        | `'cartao-ponto'` \| `'holerite'`                     | Type guard `isDocumentType()`             |
-| `TranscriptionStatus` | `'processando'` \| `'concluido'` \| `'erro'`         | Type guard                                |
-| `Money`               | Formato BR `'2.389,77'`, aceita `?`                  | Nunca converte para float                 |
-| `Punch`               | kind IN/OUT, time HH:MM 24h                          | Preserva `?`                              |
-| `DayRecord`           | date_raw + punches[]                                 | `isOddPunches()`, `isDateNonSequential()` |
-| `PageCartaoPonto`     | page + days[]                                        |                                           |
-| `PageHolerite`        | page, year, month, fields[], bases[]                 | `isEmpty()`                               |
-| `PayrollField`        | code, label, reference, value                        | fields ≠ bases                            |
-| `PayrollBase`         | label, value                                         |                                           |
-| `ExportFormat`        | `'xlsx'` \| `'csv'` \| `'json'`                      |                                           |
-| `CellStyle`           | header: bold white on #173772                        |                                           |
-| `RowHighlight`        | warning (#FFF3CD) ou error (#F8D7DA + borda #DC3545) | Error > Warning                           |
+| VO                    | Validação                                                           | Segurança                                 |
+| --------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| `TranscriptionId`     | Regex UUID canônico                                                 | Previne path traversal                    |
+| `DocumentType`        | `'cartao-ponto'` \| `'holerite'`                                    | Type guard `isDocumentType()`             |
+| `TranscriptionStatus` | `'processando'` \| `'concluido'` \| `'erro'`                        | Type guard                                |
+| `Money`               | Formato BR `'2.389,77'`, aceita `?`                                 | Nunca converte para float                 |
+| `Punch`               | kind IN/OUT, time HH:MM 24h                                         | Preserva `?`                              |
+| `DayRecord`           | date_raw + punches[]                                                | `isOddPunches()`, `isDateNonSequential()` |
+| `PageCartaoPonto`     | page + days[]                                                       |                                           |
+| `PageHolerite`        | page, year, month, fields[], bases[]                                | `isEmpty()`                               |
+| `PayrollField`        | code, label, reference, value                                       | fields ≠ bases                            |
+| `PayrollBase`         | label, value                                                        |                                           |
+| `ExportFormat`        | `'xlsx'` \| `'csv'` \| `'json'`                                     |                                           |
+| `CellStyle`           | header: bold white on #173772                                       |                                           |
+| `RowHighlight`        | warning (#FFF3CD) ou error (#F8D7DA + borda #DC3545)                | Error > Warning                           |
+| `TranscriptionResult` | Discriminated union com campo `kind` ('cartao-ponto' \| 'holerite') | Type narrowing seguro                     |
 
 ### 3.3 Extractors (domain services, puros)
 
@@ -202,18 +203,19 @@ Stack de plugins (ordem):
 
 ### 5.4 Middlewares de segurança
 
-| Camada            | Mecanismo                                                       |
-| ----------------- | --------------------------------------------------------------- |
-| Upload size       | 3 camadas: Fastify bodyLimit, multipart fileSize, chunk counter |
-| Magic bytes       | Primeiros 5 bytes = `%PDF-`                                     |
-| UUID validation   | Regex canônico em TranscriptionId.from()                        |
-| Rate limit        | 300 req/60s por IP (configurável)                               |
-| Per-IP queue      | Max 3 uploads simultâneos por IP (429)                          |
-| trustProxy        | 'loopback' — só confia proxies locais                           |
-| PII redaction     | Logger scrub: CPF, matrícula, email, auth headers               |
-| Sanitized storage | Arquivos como `<uuid>.pdf`, nunca nome original                 |
-| CORS              | Origin whitelist configurável                                   |
-| Helmet            | Security headers padrão                                         |
+| Camada            | Mecanismo                                                                       |
+| ----------------- | ------------------------------------------------------------------------------- |
+| Upload size       | 3 camadas: Fastify bodyLimit, multipart fileSize, chunk counter                 |
+| Magic bytes       | Primeiros 5 bytes = `%PDF-`                                                     |
+| UUID validation   | Regex canônico em TranscriptionId.from()                                        |
+| Rate limit        | 300 req/60s por IP (configurável)                                               |
+| Per-IP queue      | Max 3 uploads simultâneos por IP (429)                                          |
+| trustProxy        | 'loopback' — só confia proxies locais                                           |
+| PII redaction     | Logger scrub: CPF, matrícula, email, auth headers                               |
+| Sanitized storage | Arquivos como `<uuid>.pdf`, nunca nome original                                 |
+| CORS              | Origin whitelist configurável                                                   |
+| Helmet            | Security headers padrão                                                         |
+| JWT Auth          | Bearer token verification; refresh via httpOnly cookie; scrypt password hashing |
 
 ### 5.5 Retention
 
@@ -245,7 +247,7 @@ Stack de plugins (ordem):
 | `ReviewTable`    | Tabela editável: colunas dinâmicas, warnings inline          |
 | `PdfViewer`      | Lazy-loaded react-pdf, navegação por página, revokeObjectURL |
 | `DownloadButton` | 3 links: xlsx, csv, json                                     |
-| `WarningBadge`   | Badge amarelo/vermelho com tooltip                           |
+| `WarningBadge`   | Badge amarelo/vermelho com tooltip de aviso                  |
 
 ### 6.3 Hooks
 
@@ -253,6 +255,7 @@ Stack de plugins (ordem):
 | ---------------- | ------------------------------------------------------------- |
 | `useTranscricao` | react-query polling (2s), auto-para em status terminal, cache |
 | `useUpload`      | Estado do form, POST FormData, callback onSuccess(id, file)   |
+| `useAutoSave`    | Debounce de salvamento automático (500ms)                     |
 
 ### 6.4 Vite Config
 
@@ -261,24 +264,28 @@ Stack de plugins (ordem):
 
 ---
 
-## 7. Testes — 179 testes, 24 arquivos
+## 7. Testes — 31 arquivos de teste + 2 testes de frontend (33 total)
 
 ### 7.1 Estrutura
 
 ```
 tests/
   unit/
-    domain/          (12 arquivos, ~100 testes)
+    domain/          (16 arquivos)
       transcription/   entity, VOs, extractors, warning-calculator
       spreadsheet/     builder, highlight-detector, row-highlight, export-format
       shared/          TranscriptionId, DocumentType, TranscriptionStatus, CellStyle
-    application/     (6 arquivos, ~39 testes)
+    application/     (7 arquivos)
       create, process, get, update, export, result-parser
-  integration/       (3 arquivos, ~21 testes)
+  integration/       (3 arquivos + 1 spec E2E)
     api.test.ts        (12 testes: contrato HTTP completo)
     upload-security    (6 testes: limites, magic bytes, sanitização, 429)
     pipeline.test.ts   (3 testes: E2E com PDFs reais)
 ```
+
+**E2E (Playwright):** tests/e2e/app.spec.ts — homepage, health check, upload form, navigation
+
+**Frontend (Vitest + Testing Library):** packages/frontend/src/components/*.test.tsx — DownloadButton, WarningBadge
 
 ### 7.2 Cobertura
 
@@ -365,7 +372,7 @@ com 18 findings categorizados por severidade.
 ```bash
 npm run lint         # ✅ ESLint passou
 npm run typecheck    # ✅ TypeScript passou
-npm test             # ✅ 179/179 testes passaram
+npm test             # ✅ todos os testes passaram
 ```
 
 ### 8.5 Commit resultante

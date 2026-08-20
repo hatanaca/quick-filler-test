@@ -123,7 +123,34 @@ bases: PayrollBase[]       // bases de cálculo (seção separada)
 - **`isEmpty()`:** Página existe no PDF mas nenhum dado saiu (warning).
 - **`hasUncertainty()`:** Algum campo tem `?` (warning).
 
-## 3.4 Entidade `Transcription` — O Aggregate Root
+## 3.4 Utilitários Compartilhados do Domain
+
+O domain tem utilitários puros (zero dependências externas) usados por
+múltiplos módulos:
+
+### `date-utils.ts`
+
+- `parseDateRaw(dateStr)` → classifica como `readable`, `unreadable` ou
+  `impossible`. Valida dias-por-mês com ano bissexto. Usado pelo
+  `WarningCalculator` para não quebrar cadeia de sequência com datas
+  impossíveis.
+- `daysBetween(date1, date2)` → diferença em dias entre duas datas.
+
+### `text-utils.ts`
+
+Funções utilitárias para manipulação de texto extraído de PDFs.
+
+### `parse-utils.ts`
+
+Funções de parsing compartilhadas entre os extratores de cartão de ponto e
+holerite — extraídas para evitar duplicação.
+
+### `holerite/competence-builder.ts`
+
+Builder para competência (mês/ano) de holerites — encapsula a lógica de
+detecção de competência em diferentes formatos de layout.
+
+## 3.5 Entidade `Transcription` — O Aggregate Root
 
 ```typescript
 class Transcription {
@@ -148,7 +175,28 @@ class Transcription {
 
 **Por que Domain Events?** Em vez de chamar side effects diretamente (ex: "salvar no banco" dentro de `complete()`), a entidade emite eventos. Quem quiser reagir a esses eventos se inscreve no Event Bus. Isso desacopla a entidade de qualquer infraestrutura.
 
-## 3.5 Ports — Contratos no Domain
+### TranscriptionResult — Discriminated Union
+
+O resultado da extração (`_value`) é uma discriminated union com campo `kind`:
+
+```typescript
+type TranscriptionResult = CartaoPontoResult | HoleriteResult
+
+interface CartaoPontoResult {
+  kind: 'cartao-ponto'
+  pages: PageCartaoPonto[]
+}
+
+interface HoleriteResult {
+  kind: 'holerite'
+  pages: PageHolerite[]
+}
+```
+
+O campo `kind` permite type narrowing seguro — o frontend e o parser de
+PUT usam `result.kind` para saber qual estrutura esperar.
+
+## 3.6 Ports — Contratos no Domain
 
 **Port** é uma interface (TypeScript `interface`) que define "o que precisa existir" sem dizer "como implementar".
 
@@ -156,7 +204,7 @@ class Transcription {
 // Domain define O QUE precisa
 interface PdfExtractorPort {
   extractPages(buffer: Buffer): Promise<string[]>
-  renderPage(pageIndex: number, buffer: Buffer): Promise: Promise<Buffer>
+  renderPage(pageIndex: number, buffer: Buffer): Promise<Buffer>
 }
 
 // Infrastructure implementa COMO
@@ -169,7 +217,7 @@ class PdfJsExtractorAdapter implements PdfExtractorPort {
 
 **Por que separar?** O domain não precisa saber qual biblioteca de PDF você usa. Se amanhã trocar pdfjs-dist por outra coisa, só muda o adapter — o domain não muda.
 
-## 3.6 Adapters — Implementações Concretas
+## 3.7 Adapters — Implementações Concretas
 
 | Adapter                           | Port que implementa        | O que faz                                                                                                               |
 | --------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |

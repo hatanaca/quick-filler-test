@@ -57,7 +57,7 @@
 ### ExcelJS (geração de planilhas)
 
 - **Por que:** Gera arquivos .xlsx com formatação (cores, bordas, fontes). Suporta CSV e JSON também.
-- **csv-stringify:** Alternativa leve para gerar CSV (usado em conjunto com ExcelJS).
+- **CSV e JSON:** Geração nativa via ExcelJS (csv-stringify foi removido na v1.2.0).
 
 ### Vitest (testes)
 

@@ -11,10 +11,10 @@ aplicação orquestra use cases; a infraestrutura implementa os ports
 
 ### Bounded Contexts
 
-| Contexto | Responsabilidade | Aggregate Root |
-|----------|-----------------|----------------|
-| **Transcription** | Upload, processamento (texto/OCR), extração, revisão | `Transcription` |
-| **Spreadsheet** | Transposição do resultado para a forma de planilha com destaques | `SpreadsheetExport` (stateless) |
+| Contexto          | Responsabilidade                                                 | Aggregate Root                  |
+| ----------------- | ---------------------------------------------------------------- | ------------------------------- |
+| **Transcription** | Upload, processamento (texto/OCR), extração, revisão             | `Transcription`                 |
+| **Spreadsheet**   | Transposição do resultado para a forma de planilha com destaques | `SpreadsheetExport` (stateless) |
 
 ### Camadas
 
@@ -28,9 +28,15 @@ frontend       → independente (fala com a API via HTTP)
 **NUNCA**: `domain` importa `infrastructure`/`application`;
 `application` importa `infrastructure` (usa apenas ports).
 
+### Autenticação
+
+Todas as rotas de transcrição requerem JWT Bearer token (exceto `/healthz` e
+rotas de auth). Login via `POST /api/auth/login` retorna access token + refresh
+token em cookie httpOnly.
+
 ### Fluxo de uma transcrição
 
-1. `POST /api/transcricoes` (infrastructure) valida upload (magic bytes, limite)
+1. `POST /api/transcricoes` (infrastructure) valida JWT + upload (magic bytes, limite)
 2. `CreateTranscriptionUseCase` (application) cria a entidade `Transcription`
 3. Processamento assíncrono (nunca dentro do request):
    `ProcessTranscriptionUseCase` → `PdfExtractorPort.extractPages` →
@@ -55,13 +61,14 @@ frontend       → independente (fala com a API via HTTP)
 
 ### Decisões
 
-| Decisão | Alternativa | Por quê |
-|---------|------------|---------|
-| Fastify | Express | Mais rápido, tipado, schema validation |
-| Tesseract.js local | Google Vision | Sem custo, sem API key, offline |
-| Polling (2s) | SSE/WebSocket | Simples e suficiente para o contrato |
-| In-memory repository | Banco | Retenção curta; trocar implementando o port |
-| DI manual | NestJS/typedi | Sem framework, suficiente para o tamanho |
+| Decisão                | Alternativa   | Por quê                                                |
+| ---------------------- | ------------- | ------------------------------------------------------ |
+| Fastify                | Express       | Mais rápido, tipado, schema validation                 |
+| Tesseract.js local     | Google Vision | Sem custo, sem API key, offline                        |
+| Polling (2s)           | SSE/WebSocket | Simples e suficiente para o contrato                   |
+| In-memory repository   | Banco         | Retenção curta; trocar implementando o port            |
+| DI manual              | NestJS/typedi | Sem framework, suficiente para o tamanho               |
+| JWT + httpOnly cookies | Session store | Stateless, funciona atrás de proxies, refresh rotation |
 
 ## English
 
@@ -74,10 +81,10 @@ ports (HTTP, OCR, PDF, spreadsheets, persistence).
 
 ### Bounded Contexts
 
-| Context | Responsibility | Aggregate Root |
-|---------|---------------|----------------|
-| **Transcription** | Upload, processing (text/OCR), extraction, review | `Transcription` |
-| **Spreadsheet** | Transposition of the result into spreadsheet form with highlights | `SpreadsheetExport` (stateless) |
+| Context           | Responsibility                                                    | Aggregate Root                  |
+| ----------------- | ----------------------------------------------------------------- | ------------------------------- |
+| **Transcription** | Upload, processing (text/OCR), extraction, review                 | `Transcription`                 |
+| **Spreadsheet**   | Transposition of the result into spreadsheet form with highlights | `SpreadsheetExport` (stateless) |
 
 ### Layers
 
@@ -91,9 +98,15 @@ frontend       → independent (talks to the API over HTTP)
 **NEVER**: `domain` imports `infrastructure`/`application`;
 `application` imports `infrastructure` (ports only).
 
+### Authentication
+
+All transcription routes require a JWT Bearer token (except `/healthz` and
+auth routes). Login via `POST /api/auth/login` returns access token + refresh
+token in httpOnly cookie.
+
 ### Transcription flow
 
-1. `POST /api/transcricoes` (infrastructure) validates upload (magic bytes, limit)
+1. `POST /api/transcricoes` (infrastructure) validates JWT + upload (magic bytes, limit)
 2. `CreateTranscriptionUseCase` (application) creates the `Transcription` entity
 3. Async processing (never inside the request):
    `ProcessTranscriptionUseCase` → `PdfExtractorPort.extractPages` →
@@ -118,10 +131,11 @@ frontend       → independent (talks to the API over HTTP)
 
 ### Decisions
 
-| Decision | Alternative | Why |
-|----------|-------------|-----|
-| Fastify | Express | Faster, typed, schema validation |
-| Local Tesseract.js | Google Vision | No cost, no API key, offline |
-| Polling (2s) | SSE/WebSocket | Simple and sufficient for the contract |
-| In-memory repository | Database | Short retention; swap by implementing the port |
-| Manual DI | NestJS/typedi | Framework-free, enough for this size |
+| Decision               | Alternative   | Why                                               |
+| ---------------------- | ------------- | ------------------------------------------------- |
+| Fastify                | Express       | Faster, typed, schema validation                  |
+| Local Tesseract.js     | Google Vision | No cost, no API key, offline                      |
+| Polling (2s)           | SSE/WebSocket | Simple and sufficient for the contract            |
+| In-memory repository   | Database      | Short retention; swap by implementing the port    |
+| Manual DI              | NestJS/typedi | Framework-free, enough for this size              |
+| JWT + httpOnly cookies | Session store | Stateless, works behind proxies, refresh rotation |

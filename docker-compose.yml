@@ -13,7 +13,7 @@ services:
       UPLOAD_MAX_CONCURRENT_PER_IP: 3
       PROCESSING_TIMEOUT_MS: 60000
       RETENTION_MINUTES: 60
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://localhost}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://thiagohatanaka.site}
       RATE_LIMIT_MAX: 300
       RATE_LIMIT_WINDOW_MS: 60000
       TESSERACT_LANG: por
@@ -23,13 +23,8 @@ services:
       OCR_PREPROCESS: auto
       OCR_PSM: 6
       OCR_WHITELIST: ''
-      # nginx conecta ao backend pela rede Docker (não-loopback); confiar na
-      # sub-rede do proxy é necessário para rate limit/fila verem o IP real.
-      # 172.16.0.0/12 cobre as redes bridge padrão do Docker.
       TRUST_PROXY: loopback,172.16.0.0/12
-      # JWT Secret (REQUIRED in production)
       JWT_SECRET: ${JWT_SECRET:-}
-      # User credentials (REQUIRED in production)
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       USER_EMAIL: ${USER_EMAIL:-}
@@ -49,12 +44,21 @@ services:
       context: .
       target: frontend
     ports:
-      - '0.0.0.0:5173:80'
+      - '0.0.0.0:443:443'
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
+      DOMAIN: ${DOMAIN:-thiagohatanaka.site}
+    volumes:
+      - ./letsencrypt/etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./letsencrypt/etc/letsencrypt:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: unless-stopped
 
 volumes:

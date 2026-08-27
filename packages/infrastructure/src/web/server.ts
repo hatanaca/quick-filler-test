@@ -97,7 +97,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   // Auth routes (login, refresh, logout - no auth required)
   registerAuthRoutes(app)
 
-  // Protected transcription routes
+  // Transcription routes (auth optional — works with or without token)
   registerTranscriptionRoutes(app, {
     createTranscription: deps.createTranscription,
     getTranscription: deps.getTranscription,

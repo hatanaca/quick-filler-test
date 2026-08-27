@@ -6,11 +6,13 @@ import { DownloadButton } from './components/DownloadButton'
 import { useTranscricao } from './hooks/useTranscricao'
 import { useAutoSave } from './hooks/useAutoSave'
 import { useAuth } from './contexts/AuthContext'
+import { LoginPage } from './pages/LoginPage'
 
 export default function App() {
-  const { user, logout } = useAuth()
+  const { user, isAuthenticated, logout } = useAuth()
   const [id, setId] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [showLogin, setShowLogin] = useState(false)
   const { transcricao, erro: fetchErro } = useTranscricao(id)
   const { salvo, saveErro, handleChange, resetSave } = useAutoSave({ id })
 
@@ -23,6 +25,10 @@ export default function App() {
     [resetSave],
   )
 
+  if (showLogin && !isAuthenticated) {
+    return <LoginPage onBack={() => setShowLogin(false)} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <header className="mb-6 flex items-center justify-between">
@@ -33,20 +39,31 @@ export default function App() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-sm font-medium text-gray-700">{user?.email}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-          </div>
-          <button
-            onClick={() => {
-              setId(null)
-              setPdfFile(null)
-              logout()
-            }}
-            className="rounded bg-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-300"
-          >
-            Sair
-          </button>
+          {isAuthenticated ? (
+            <>
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-700">{user?.email}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setId(null)
+                  setPdfFile(null)
+                  logout()
+                }}
+                className="rounded bg-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-300"
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setShowLogin(true)}
+              className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+            >
+              Entrar
+            </button>
+          )}
         </div>
       </header>
 

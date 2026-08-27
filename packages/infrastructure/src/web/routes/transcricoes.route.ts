@@ -14,7 +14,7 @@ import {
   isDocumentType,
   isExportFormat,
 } from '@quickfiller/domain'
-import { verifyToken } from '../middleware/auth.js'
+import { optionalVerifyToken } from '../middleware/auth.js'
 import { isPdfMagicBytes } from '../middleware/upload.js'
 import { isUploadTooLarge, type ProcessingQueue } from '../middleware/queue.js'
 
@@ -38,7 +38,7 @@ export function registerTranscriptionRoutes(
    */
   app.post(
     '/api/transcricoes',
-    { preHandler: [verifyToken] },
+    { preHandler: [optionalVerifyToken] },
     async (request: FastifyRequest, reply) => {
       // O slot da fila cobre upload E processamento: o limite per-IP deixa de ser
       // contornado por N uploads sequenciais que disparam N jobs concorrentes.
@@ -119,7 +119,7 @@ export function registerTranscriptionRoutes(
    * GET /api/transcricoes/:id
    * Get a transcription by ID (requires authentication)
    */
-  app.get('/api/transcricoes/:id', { preHandler: [verifyToken] }, async (request) => {
+  app.get('/api/transcricoes/:id', { preHandler: [optionalVerifyToken] }, async (request) => {
     const { id } = request.params as { id: string }
     return deps.getTranscription.execute(TranscriptionId.from(id))
   })
@@ -128,7 +128,7 @@ export function registerTranscriptionRoutes(
    * PUT /api/transcricoes/:id
    * Update a transcription (requires authentication)
    */
-  app.put('/api/transcricoes/:id', { preHandler: [verifyToken] }, async (request) => {
+  app.put('/api/transcricoes/:id', { preHandler: [optionalVerifyToken] }, async (request) => {
     const { id } = request.params as { id: string }
     const body = request.body as { value?: unknown }
     if (!body || typeof body !== 'object' || !('value' in body)) {
@@ -147,7 +147,7 @@ export function registerTranscriptionRoutes(
    */
   app.get(
     '/api/transcricoes/:id/planilha',
-    { preHandler: [verifyToken] },
+    { preHandler: [optionalVerifyToken] },
     async (request, reply) => {
       const { id } = request.params as { id: string }
       const query = request.query as { formato?: string }

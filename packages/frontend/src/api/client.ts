@@ -1,5 +1,5 @@
 import type { DocumentType, Transcription } from '../types'
-import { authenticatedFetch } from './auth'
+import { getAccessToken } from './auth'
 import { BASE_URL } from './config'
 
 async function handle<T>(response: Response): Promise<T> {
@@ -16,6 +16,11 @@ async function handle<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
+function authHeaders(): HeadersInit {
+  const token = getAccessToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export async function createTranscription(
   arquivo: File,
   tipo: DocumentType,
@@ -24,22 +29,25 @@ export async function createTranscription(
   form.append('arquivo', arquivo)
   form.append('tipo', tipo)
 
-  const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes`, {
+  const response = await fetch(`${BASE_URL}/api/transcricoes`, {
     method: 'POST',
     body: form,
+    headers: authHeaders(),
   })
   return handle<{ id: string }>(response)
 }
 
 export async function getTranscription(id: string): Promise<Transcription> {
-  const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes/${id}`)
+  const response = await fetch(`${BASE_URL}/api/transcricoes/${id}`, {
+    headers: authHeaders(),
+  })
   return handle<Transcription>(response)
 }
 
 export async function updateTranscription(id: string, value: unknown): Promise<void> {
-  const response = await authenticatedFetch(`${BASE_URL}/api/transcricoes/${id}`, {
+  const response = await fetch(`${BASE_URL}/api/transcricoes/${id}`, {
     method: 'PUT',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ value }),
   })
   await handle<void>(response)

@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-export function LoginPage() {
+interface LoginPageProps {
+  onBack?: () => void
+}
+
+export function LoginPage({ onBack }: LoginPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -72,6 +76,16 @@ export function LoginPage() {
           >
             {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-full text-gray-600 py-2 px-4 rounded-md hover:bg-gray-100 focus:outline-none text-sm"
+            >
+              Voltar sem entrar
+            </button>
+          )}
         </form>
       </div>
     </div>

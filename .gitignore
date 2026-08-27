@@ -50,6 +50,7 @@ test-results/
 
 # Playwright / screenshots output
 output/
+!exemplos/output/
 
 # OCR trained data (large binary)
 *.traineddata

@@ -68,6 +68,26 @@ export function verifyRefreshToken(this: FastifyInstance, token: string): { sub:
 }
 
 /**
+ * Optional JWT verification — populates request.user when a valid token
+ * is present, but does NOT reject requests without one. Used for routes
+ * that work both authenticated and unauthenticated.
+ */
+export async function optionalVerifyToken(
+  this: FastifyInstance,
+  request: FastifyRequest,
+  _reply: FastifyReply,
+): Promise<void> {
+  try {
+    const token = request.headers.authorization?.replace('Bearer ', '')
+    if (token) {
+      request.user = this.jwt.verify<JWTPayload>(token)
+    }
+  } catch {
+    // Token inválido ou ausente — segue sem autenticação
+  }
+}
+
+/**
  * Register JWT plugin with Fastify.
  */
 export async function registerJwt(app: FastifyInstance, secret: string): Promise<void> {
